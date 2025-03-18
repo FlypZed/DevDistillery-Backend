@@ -10,9 +10,11 @@ import java.util.Map;
 public class CustomOAuth2User implements OAuth2User {
 
     private final OAuth2User oAuth2User;
+    private final String email;
 
-    public CustomOAuth2User(OAuth2User oAuth2User) {
+    public CustomOAuth2User(OAuth2User oAuth2User, String email) {
         this.oAuth2User = oAuth2User;
+        this.email = email;
     }
 
     @Override
@@ -22,20 +24,19 @@ public class CustomOAuth2User implements OAuth2User {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Devuelve una lista de autoridades (roles o permisos)
-        return Collections.emptyList(); // Personalizar
+        return Collections.emptyList();
     }
 
     @Override
     public String getName() {
-        return oAuth2User.getAttribute("name");
+        return oAuth2User.getAttribute("login");
     }
 
     public String getEmail() {
-        return oAuth2User.getAttribute("email");
+        return email;
     }
 
     public String getPicture() {
-        return oAuth2User.getAttribute("picture");
+        return oAuth2User.getAttribute("avatar_url");
     }
 }

@@ -4,10 +4,14 @@
     <title>Home</title>
 </head>
 <body>
-<h1>Bienvenido, <span th:text="${#authentication.principal.name}">Usuario</span></h1>
+<h1>Bienvenido, <span th:text="${#authentication?.principal?.name ?: 'Usuario'}">Usuario</span></h1>
 <p>Has iniciado sesión correctamente.</p>
-<p>Email: <span th:text="${#authentication.principal.email}">email</span></p>
-<p>Foto de perfil: <img th:src="${#authentication.principal.picture}" alt="Foto de perfil"></p>
+<p>Email: <span th:text="${#authentication?.principal?.email ?: 'No disponible'}">email</span></p>
+<p>Foto de perfil: <img th:src="${#authentication?.principal?.picture}" alt="Foto de perfil"></p>
 <a href="/logout">Cerrar sesión</a>
+<div th:if="${#authentication}">
+    <p>Autenticación: <span th:text="${#authentication}"></span></p>
+    <p>Principal: <span th:text="${#authentication.principal}"></span></p>
+</div>
 </body>
 </html>
