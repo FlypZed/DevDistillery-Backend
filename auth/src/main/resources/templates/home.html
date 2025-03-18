@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Home</title>
+</head>
+<body>
+<h1>Bienvenido, <span th:text="${#authentication.principal.name}">Usuario</span></h1>
+<p>Has iniciado sesión correctamente.</p>
+<p>Email: <span th:text="${#authentication.principal.email}">email</span></p>
+<p>Foto de perfil: <img th:src="${#authentication.principal.picture}" alt="Foto de perfil"></p>
+<a href="/logout">Cerrar sesión</a>
+</body>
+</html>
