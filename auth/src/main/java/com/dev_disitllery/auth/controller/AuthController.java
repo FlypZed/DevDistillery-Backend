@@ -1,8 +1,14 @@
 package com.dev_disitllery.auth.controller;
 
+import com.dev_disitllery.auth.dto.ResponseDTO;
 import com.dev_disitllery.auth.model.User;
 import com.dev_disitllery.auth.repository.UserRepository;
+import com.dev_disitllery.auth.service.AuthService;
 import com.dev_disitllery.auth.service.JwtService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -10,28 +16,41 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Auth API", description = "API for authentication and user management")
 public class AuthController {
 
+    private final AuthService authService;
     private final JwtService jwtService;
     private final UserRepository userRepository;
 
-    public AuthController(JwtService jwtService, UserRepository userRepository) {
+    public AuthController(AuthService authService, JwtService jwtService, UserRepository userRepository) {
+        this.authService = authService;
         this.jwtService = jwtService;
         this.userRepository = userRepository;
     }
 
     @GetMapping("/validate")
-    public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String token) {
+    @Operation(summary = "Validate JWT token", description = "Validate the JWT token provided in the Authorization header")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Token is valid"),
+            @ApiResponse(responseCode = "401", description = "Token is invalid or expired")
+    })
+    public ResponseEntity<ResponseDTO<Boolean>> validateToken(@RequestHeader("Authorization") String token) {
         if (token != null && token.startsWith("Bearer ")) {
             String jwt = token.substring(7);
             if (jwtService.validateToken(jwt)) {
-                return ResponseEntity.ok().build();
+                return ResponseEntity.ok(ResponseDTO.ofSuccess(true));
             }
         }
-        return ResponseEntity.status(401).build();
+        return ResponseEntity.status(401).body(ResponseDTO.ofError("Unauthorized", "Token is invalid or expired"));
     }
 
     @GetMapping("/user")
+    @Operation(summary = "Get user info", description = "Get user information based on the JWT token provided in the Authorization header")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User information retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Token is invalid or expired")
+    })
     public ResponseEntity<?> getUserInfo(@RequestHeader("Authorization") String token) {
         if (token != null && token.startsWith("Bearer ")) {
             String jwt = token.substring(7);
@@ -47,12 +66,18 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "Logout", description = "Logout the user (token should be removed on the client side)")
+    @ApiResponse(responseCode = "200", description = "Logout successful")
     public ResponseEntity<?> logout() {
-        // El logout debe ser manejado en el frontend eliminando el token.
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/token")
+    @Operation(summary = "Get JWT token", description = "Get a JWT token for the authenticated OAuth2 user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Token generated successfully"),
+            @ApiResponse(responseCode = "401", description = "User not authenticated")
+    })
     public ResponseEntity<?> getToken(@AuthenticationPrincipal OAuth2User principal) {
         if (principal != null) {
             String email = principal.getAttribute("email");
@@ -60,5 +85,12 @@ public class AuthController {
             return ResponseEntity.ok(token);
         }
         return ResponseEntity.status(401).build();
+    }
+
+    @GetMapping("/login-github")
+    public ResponseEntity<?> loginWithGitHub (@RequestParam("code") String code){
+        System.out.println("Login GitHub!!!");
+        authService.loginWithGitHub(code);
+        return ResponseEntity.ok().build();
     }
 }
