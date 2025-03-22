@@ -17,6 +17,11 @@ var (
 	clientsMu sync.Mutex
 )
 
+type BoardMessage struct {
+	Type    string      `json:"type"`
+	Payload interface{} `json:"payload"`
+}
+
 func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -30,13 +35,13 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	clientsMu.Unlock()
 
 	for {
-		var msg map[string]interface{}
+		var msg BoardMessage
 		if err := conn.ReadJSON(&msg); err != nil {
 			log.Println("Error reading message:", err)
 			break
 		}
 
-		broadcast(msg)
+		handleMessage(msg, conn)
 	}
 
 	clientsMu.Lock()
@@ -44,7 +49,18 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	clientsMu.Unlock()
 }
 
-func broadcast(msg interface{}) {
+func handleMessage(msg BoardMessage, conn *websocket.Conn) {
+	switch msg.Type {
+	case "draw":
+		broadcast(msg)
+	case "shape":
+		broadcast(msg)
+	default:
+		log.Println("Unknown message type:", msg.Type)
+	}
+}
+
+func broadcast(msg BoardMessage) {
 	clientsMu.Lock()
 	defer clientsMu.Unlock()
 
