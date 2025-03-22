@@ -88,8 +88,7 @@ public class AuthController {
     }
 
     @GetMapping("/login-github")
-    public ResponseEntity<?> loginWithGitHub (@RequestParam("code") String code){
-        System.out.println("Login GitHub!!!");
+    public ResponseEntity<?> loginWithGitHub(@RequestParam("code") String code) {
         authService.loginWithGitHub(code);
         return ResponseEntity.ok().build();
     }

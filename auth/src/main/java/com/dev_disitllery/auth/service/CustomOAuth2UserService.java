@@ -1,6 +1,8 @@
 package com.dev_disitllery.auth.service;
 
 import com.dev_disitllery.auth.model.CustomOAuth2User;
+import com.dev_disitllery.auth.model.User;
+import com.dev_disitllery.auth.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -20,9 +22,11 @@ import java.util.Map;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final JwtService jwtService;
+    private final UserRepository userRepository;
 
-    public CustomOAuth2UserService(JwtService jwtService) {
+    public CustomOAuth2UserService(JwtService jwtService, UserRepository userRepository) {
         this.jwtService = jwtService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -31,6 +35,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String email = getEmail(userRequest);
         String token = jwtService.generateToken(email);
         System.out.println("Token generado: " + token);
+
+        User user = userRepository.findByEmail(email).orElse(new User());
+        user.setEmail(email);
+        user.setName(oAuth2User.getAttribute("name"));
+        userRepository.save(user);
+
         return new CustomOAuth2User(oAuth2User, email);
     }
 

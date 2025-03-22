@@ -37,10 +37,9 @@ public class AuthService {
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             System.out.println(response.body());
-            // return response.body();
+
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
-            // return "Error al realizar la petición: " + e.getMessage();
         }
 
     }

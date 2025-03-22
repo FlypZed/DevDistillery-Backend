@@ -2,6 +2,7 @@ package com.dev_disitllery.auth.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -10,15 +11,18 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import com.dev_disitllery.auth.service.JwtService;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtService jwtService;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, JwtService jwtService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.jwtService = jwtService;
     }
 
     @Bean
@@ -46,8 +50,17 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/auth")
-                        .failureUrl("/login?error=true")
+                        .successHandler((request, response, authentication) -> {
+                            String jwt = jwtService.generateToken(authentication.getName());
+
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"token\": \"" + jwt + "\"}");
+                        })
+                        .failureHandler((request, response, exception) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"Authentication failed\"}");
+                        })
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
