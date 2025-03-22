@@ -6,19 +6,17 @@ import (
 	controllerTask "func/internal/controller/task"
 	controllerTeam "func/internal/controller/team"
 	controllerUser "func/internal/controller/user"
-
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter(
+	router *gin.Engine,
 	userController *controllerUser.UserController,
 	teamController *controllerTeam.TeamController,
 	organizationController *controllerOrg.OrganizationController,
 	projectController *controllerProj.ProjectController,
 	taskController *controllerTask.TaskController,
-) *gin.Engine {
-	router := gin.Default()
-
+) {
 	api := router.Group("/api")
 	{
 		userRoutes := api.Group("/users")
@@ -61,6 +59,4 @@ func SetupRouter(
 			taskRoutes.DELETE("/:id", taskController.DeleteTask)
 		}
 	}
-
-	return router
 }

@@ -6,13 +6,6 @@ import (
 	controllerTask "func/internal/controller/task"
 	controllerTeam "func/internal/controller/team"
 	controllerUser "func/internal/controller/user"
-	"github.com/gin-gonic/gin"
-
-	serviceOrg "func/internal/service/organization"
-	serviceProj "func/internal/service/project"
-	serviceTask "func/internal/service/task"
-	serviceTeam "func/internal/service/team"
-	serviceUser "func/internal/service/user"
 
 	repositoryOrg "func/internal/repository/organization"
 	repositoryProj "func/internal/repository/project"
@@ -20,7 +13,14 @@ import (
 	repositoryTeam "func/internal/repository/team"
 	repositoryUser "func/internal/repository/user"
 
+	serviceOrg "func/internal/service/organization"
+	serviceProj "func/internal/service/project"
+	serviceTask "func/internal/service/task"
+	serviceTeam "func/internal/service/team"
+	serviceUser "func/internal/service/user"
+
 	"func/pkg/infrastructure"
+	"github.com/gin-gonic/gin"
 )
 
 func New() *gin.Engine {
@@ -44,13 +44,20 @@ func New() *gin.Engine {
 	projectController := controllerProj.NewProjectController(projectService)
 	taskController := controllerTask.NewTaskController(taskService)
 
-	router := SetupRouter(
+	router := gin.Default()
+
+	SetupRouter(
+		router,
 		userController,
 		teamController,
 		organizationController,
 		projectController,
 		taskController,
 	)
+
+	router.GET("/ws", func(c *gin.Context) {
+		infrastructure.WebSocketHandler(c.Writer, c.Request)
+	})
 
 	return router
 }
