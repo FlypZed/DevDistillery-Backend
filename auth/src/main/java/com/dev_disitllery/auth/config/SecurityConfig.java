@@ -2,13 +2,11 @@ package com.dev_disitllery.auth.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import com.dev_disitllery.auth.service.JwtService;
@@ -37,32 +35,19 @@ public class SecurityConfig {
                                 "/",
                                 "/login",
                                 "/oauth2/**",
-                                "/api/auth/validate",
-                                "/api/auth/user",
-                                "/api/auth/logout",
-                                "/api/auth/token",
-                                "/api/auth/login-github"
-                        ).permitAll()
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/api/auth/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler((request, response, authentication) -> {
                             String jwt = jwtService.generateToken(authentication.getName());
-
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"token\": \"" + jwt + "\"}");
+                            response.sendRedirect("http://localhost:5173/oauth-callback?token=" + jwt);
                         })
                         .failureHandler((request, response, exception) -> {
-                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"error\": \"Authentication failed\"}");
+                            response.sendRedirect("http://localhost:5173/login?error=auth_failed");
                         })
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                );
 
         return http.build();
     }

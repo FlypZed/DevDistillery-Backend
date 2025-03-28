@@ -9,10 +9,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -78,11 +81,12 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Token generated successfully"),
             @ApiResponse(responseCode = "401", description = "User not authenticated")
     })
-    public ResponseEntity<?> getToken(@AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<?> getToken(@AuthenticationPrincipal OAuth2User principal, HttpServletResponse response) throws IOException {
         if (principal != null) {
             String email = principal.getAttribute("email");
             String token = jwtService.generateToken(email);
-            return ResponseEntity.ok(token);
+            response.sendRedirect("http://localhost:5173/oauth-callback?token=" + token);
+            return ResponseEntity.ok().build();
         }
         return ResponseEntity.status(401).build();
     }
