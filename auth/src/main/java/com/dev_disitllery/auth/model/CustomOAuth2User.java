@@ -11,10 +11,14 @@ public class CustomOAuth2User implements OAuth2User {
 
     private final OAuth2User oAuth2User;
     private final String email;
+    private final String name;
+    private final String picture;
 
-    public CustomOAuth2User(OAuth2User oAuth2User, String email) {
+    public CustomOAuth2User(OAuth2User oAuth2User, String email, String name, String picture) {
         this.oAuth2User = oAuth2User;
         this.email = email;
+        this.name = name;
+        this.picture = picture;
     }
 
     @Override
@@ -29,7 +33,7 @@ public class CustomOAuth2User implements OAuth2User {
 
     @Override
     public String getName() {
-        return oAuth2User.getAttribute("login");
+        return this.name != null ? this.name : oAuth2User.getAttribute("login");
     }
 
     public String getEmail() {
@@ -37,6 +41,14 @@ public class CustomOAuth2User implements OAuth2User {
     }
 
     public String getPicture() {
-        return oAuth2User.getAttribute("avatar_url");
+        return picture;
+    }
+
+    public Long getGithubId() {
+        return oAuth2User.getAttribute("id");
+    }
+
+    public String getGithubLogin() {
+        return oAuth2User.getAttribute("login");
     }
 }

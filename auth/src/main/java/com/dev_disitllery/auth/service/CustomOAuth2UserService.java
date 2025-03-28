@@ -32,16 +32,25 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(userRequest);
-        String email = getEmail(userRequest);
-        String token = jwtService.generateToken(email);
-        System.out.println("Token generado: " + token);
 
-        User user = userRepository.findByEmail(email).orElse(new User());
+        Map<String, Object> attributes = oAuth2User.getAttributes();
+        String name = (String) attributes.get("name");
+        String login = (String) attributes.get("login");
+        String avatarUrl = (String) attributes.get("avatar_url");
+
+        String email = getEmail(userRequest);
+
+        User user = userRepository.findByEmail(email)
+                .orElse(new User());
+
         user.setEmail(email);
-        user.setName(oAuth2User.getAttribute("name"));
+        user.setName(name != null ? name : login);
         userRepository.save(user);
 
-        return new CustomOAuth2User(oAuth2User, email);
+        String token = jwtService.generateToken(email);
+        System.out.println("Token generado para " + email + ": " + token);
+
+        return new CustomOAuth2User(oAuth2User, email, name, avatarUrl);
     }
 
     private String getEmail(OAuth2UserRequest userRequest) {
@@ -64,6 +73,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 }
             }
         }
-        return null;
+        throw new OAuth2AuthenticationException("No se pudo obtener el email del usuario");
     }
 }

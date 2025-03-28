@@ -10,7 +10,11 @@ public class User {
     private Long id;
     private String email;
     private String name;
+    private String picture;
+    private Long githubId;
+    private String githubLogin;
 
+    // Getters y setters
     public Long getId() {
         return id;
     }
@@ -33,5 +37,29 @@ public class User {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPicture() {
+        return picture;
+    }
+
+    public void setPicture(String picture) {
+        this.picture = picture;
+    }
+
+    public Long getGithubId() {
+        return githubId;
+    }
+
+    public void setGithubId(Long githubId) {
+        this.githubId = githubId;
+    }
+
+    public String getGithubLogin() {
+        return githubLogin;
+    }
+
+    public void setGithubLogin(String githubLogin) {
+        this.githubLogin = githubLogin;
     }
 }
