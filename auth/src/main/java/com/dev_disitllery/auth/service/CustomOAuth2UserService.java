@@ -34,24 +34,27 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         OAuth2User oAuth2User = super.loadUser(userRequest);
 
         Map<String, Object> attributes = oAuth2User.getAttributes();
-        String name = (String) attributes.get("name");
+        Long githubId = ((Integer) attributes.get("id")).longValue();
         String login = (String) attributes.get("login");
+        String name = (String) attributes.get("name");
         String avatarUrl = (String) attributes.get("avatar_url");
 
         String email = getEmail(userRequest);
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailOrGithubId(email, githubId)
                 .orElse(new User());
 
         user.setEmail(email);
         user.setName(name != null ? name : login);
-        userRepository.save(user);
+        user.setPicture(avatarUrl);
+        user.setGithubId(githubId);
+        user.setGithubLogin(login);
 
-        String token = jwtService.generateToken(email);
-        System.out.println("Token generado para " + email + ": " + token);
+        userRepository.save(user);
 
         return new CustomOAuth2User(oAuth2User, email, name, avatarUrl);
     }
+
 
     private String getEmail(OAuth2UserRequest userRequest) {
         RestTemplate restTemplate = new RestTemplate();
