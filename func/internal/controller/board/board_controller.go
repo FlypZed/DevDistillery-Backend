@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"func/internal/domain"
+	service "func/internal/service/board"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -26,12 +27,12 @@ type BoardMessage struct {
 }
 
 type BoardController struct {
-	service service.BoardService
+	service service.Service
 	hubs    map[string]*BoardHub
 	mutex   sync.Mutex
 }
 
-func NewBoardController(service domain.BoardService) *BoardController {
+func NewBoardController(service service.Service) *BoardController {
 	return &BoardController{
 		service: service,
 		hubs:    make(map[string]*BoardHub),
@@ -46,7 +47,7 @@ type Client struct {
 
 type BoardHub struct {
 	boardID   string
-	service   domain.BoardService
+	service   service.Service
 	clients   map[*Client]bool
 	register  chan *Client
 	broadcast chan BoardMessage
@@ -86,7 +87,7 @@ func (c *BoardController) HandleWebSocket(ctx *gin.Context) {
 	go client.readPump()
 }
 
-func NewBoardHub(boardID string, service domain.BoardService) *BoardHub {
+func NewBoardHub(boardID string, service service.Service) *BoardHub {
 	return &BoardHub{
 		boardID:   boardID,
 		service:   service,
