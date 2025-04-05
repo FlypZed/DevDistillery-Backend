@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="SwaggerUI" />
+    <title>DevDistillery API</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui.css" />
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-bundle.js" crossorigin></script>
+<script src="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-standalone-preset.js" crossorigin></script>
+<script>
+    window.onload = () => {
+      window.ui = SwaggerUIBundle({
+        spec: {
+          openapi: "3.0.0",
+          info: {
+            title: "DevDistillery API",
+            version: "1.0",
+            description: "This is the API documentation for DevDistillery.",
+            termsOfService: "http://swagger.io/terms/",
+            contact: {
+              name: "API Support",
+              url: "http://www.swagger.io/support",
+              email: "support@swagger.io"
+            },
+            license: {
+              name: "Apache 2.0",
+              url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+            }
+          },
+          servers: [
+            {
+              url: "http://localhost:8080/api",
+              description: "Local server"
+            }
+          ],
+          tags: [
+            { name: "users", description: "Operations about users" },
+            { name: "teams", description: "Operations about teams" },
+            { name: "organizations", description: "Operations about organizations" },
+            { name: "projects", description: "Operations about projects" },
+            { name: "tasks", description: "Operations about tasks" },
+            { name: "boards", description: "Operations about boards" }
+          ],
+          paths: {
+            "/users": {
+              "post": {
+                tags: ["users"],
+                summary: "Create a new user",
+                description: "Create a new user with the input payload",
+                operationId: "createUser",
+                requestBody: {
+                  description: "User payload",
+                  content: {
+                    "application/json": {
+                      schema: {
+                        $ref: "#/components/schemas/CreateUserRequest"
+                      }
+                    }
+                  },
+                  required: true
+                },
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/UserResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/users/{id}": {
+              "get": {
+                tags: ["users"],
+                summary: "Get a user by ID",
+                description: "Get details of a user by ID",
+                operationId: "getUser",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "User ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/UserResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "put": {
+                tags: ["users"],
+                summary: "Update a user by ID",
+                description: "Update details of a user by ID",
+                operationId: "updateUser",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "User ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                requestBody: {
+                  description: "User payload",
+                  content: {
+                    "application/json": {
+                      schema: {
+                        $ref: "#/components/schemas/UpdateUserRequest"
+                      }
+                    }
+                  },
+                  required: true
+                },
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/UserResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "delete": {
+                tags: ["users"],
+                summary: "Delete a user by ID",
+                description: "Delete a user by ID",
+                operationId: "deleteUser",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "User ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/UserResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/teams": {
+              "post": {
+                tags: ["teams"],
+                summary: "Create a new team",
+                description: "Create a new team with the input payload",
+                operationId: "createTeam",
+                requestBody: {
+                  description: "Team payload",
+                  content: {
+                    "application/json": {
+                      schema: {
+                        $ref: "#/components/schemas/CreateTeamRequest"
+                      }
+                    }
+                  },
+                  required: true
+                },
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/TeamResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/teams/{id}": {
+              "get": {
+                tags: ["teams"],
+                summary: "Get a team by ID",
+                description: "Get details of a team by ID",
+                operationId: "getTeam",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Team ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/TeamResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "put": {
+                tags: ["teams"],
+                summary: "Update a team by ID",
+                description: "Update details of a team by ID",
+                operationId: "updateTeam",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Team ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                requestBody: {
+                  description: "Team payload",
+                  content: {
+                    "application/json": {
+                      schema: {
+                        $ref: "#/components/schemas/UpdateTeamRequest"
+                      }
+                    }
+                  },
+                  required: true
+                },
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/TeamResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "delete": {
+                tags: ["teams"],
+                summary: "Delete a team by ID",
+                description: "Delete a team by ID",
+                operationId: "deleteTeam",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Team ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/TeamResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/organizations": {
+              "post": {
+                tags: ["organizations"],
+                summary: "Create a new organization",
+                description: "Create a new organization with the input payload",
+                operationId: "createOrganization",
+                requestBody: {
+                  description: "Organization payload",
+                  content: {
+                    "application/json": {
+                      schema: {
+                        $ref: "#/components/schemas/CreateOrganizationRequest"
+                      }
+                    }
+                  },
+                  required: true
+                },
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/OrganizationResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/organizations/{id}": {
+              "get": {
+                tags: ["organizations"],
+                summary: "Get an organization by ID",
+                description: "Get details of an organization by ID",
+                operationId: "getOrganization",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Organization ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/OrganizationResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "put": {
+                tags: ["organizations"],
+                summary: "Update an organization by ID",
+                description: "Update details of an organization by ID",
+                operationId: "updateOrganization",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Organization ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                requestBody: {
+                  description: "Organization payload",
+                  content: {
+                    "application/json": {
+                      schema: {
+                        $ref: "#/components/schemas/UpdateOrganizationRequest"
+                      }
+                    }
+                  },
+                  required: true
+                },
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/OrganizationResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "delete": {
+                tags: ["organizations"],
+                summary: "Delete an organization by ID",
+                description: "Delete an organization by ID",
+                operationId: "deleteOrganization",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Organization ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/OrganizationResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/projects": {
+              "post": {
+                tags: ["projects"],
+                summary: "Create a new project",
+                description: "Create a new project with the input payload",
+                operationId: "createProject",
+                requestBody: {
+                  description: "Project payload",
+                  content: {
+                    "application/json": {
+                      schema: {
+                        $ref: "#/components/schemas/CreateProjectRequest"
+                      }
+                    }
+                  },
+                  required: true
+                },
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/ProjectResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/projects/{id}": {
+              "get": {
+                tags: ["projects"],
+                summary: "Get a project by ID",
+                description: "Get details of a project by ID",
+                operationId: "getProject",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Project ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/ProjectResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "put": {
+                tags: ["projects"],
+                summary: "Update a project by ID",
+                description: "Update details of a project by ID",
+                operationId: "updateProject",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Project ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                requestBody: {
+                  description: "Project payload",
+                  content: {
+                    "application/json": {
+                      schema: {
+                        $ref: "#/components/schemas/UpdateProjectRequest"
+                      }
+                    }
+                  },
+                  required: true
+                },
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/ProjectResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "delete": {
+                tags: ["projects"],
+                summary: "Delete a project by ID",
+                description: "Delete a project by ID",
+                operationId: "deleteProject",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Project ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/ProjectResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/tasks": {
+              "post": {
+                tags: ["tasks"],
+                summary: "Create a new task",
+                description: "Create a new task with the input payload",
+                operationId: "createTask",
+                requestBody: {
+                  description: "Task payload",
+                  content: {
+                    "application/json": {
+                      schema: {
+                        $ref: "#/components/schemas/CreateTaskRequest"
+                      }
+                    }
+                  },
+                  required: true
+                },
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/TaskResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/tasks/{id}": {
+              "get": {
+                tags: ["tasks"],
+                summary: "Get a task by ID",
+                description: "Get details of a task by ID",
+                operationId: "getTask",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Task ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/TaskResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "put": {
+                tags: ["tasks"],
+                summary: "Update a task by ID",
+                description: "Update details of a task by ID",
+                operationId: "updateTask",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Task ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                requestBody: {
+                  description: "Task payload",
+                  content: {
+                    "application/json": {
+                      schema: {
+                        $ref: "#/components/schemas/UpdateTaskRequest"
+                      }
+                    }
+                  },
+                  required: true
+                },
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/TaskResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "delete": {
+                tags: ["tasks"],
+                summary: "Delete a task by ID",
+                description: "Delete a task by ID",
+                operationId: "deleteTask",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Task ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/TaskResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/boards/{id}": {
+              "get": {
+                tags: ["boards"],
+                summary: "Get a board by ID",
+                description: "Get details of a board by ID",
+                operationId: "getBoard",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Board ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/BoardResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "put": {
+                tags: ["boards"],
+                summary: "Save a board by ID",
+                description: "Save details of a board by ID",
+                operationId: "saveBoard",
+                parameters: [
+                  {
+                    name: "id",
+                    in: "path",
+                    description: "Board ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                requestBody: {
+                  description: "Board payload",
+                  content: {
+                    "application/json": {
+                      schema: {
+                        $ref: "#/components/schemas/SaveBoardRequest"
+                      }
+                    }
+                  },
+                  required: true
+                },
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/BoardResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/boards/ws/{boardId}": {
+              "get": {
+                tags: ["boards"],
+                summary: "Handle WebSocket connection for a board",
+                description: "Handle WebSocket connection for a board by ID",
+                operationId: "handleWebSocket",
+                parameters: [
+                  {
+                    name: "boardId",
+                    in: "path",
+                    description: "Board ID",
+                    required: true,
+                    schema: {
+                      type: "string"
+                    }
+                  }
+                ],
+                responses: {
+                  "200": {
+                    description: "successful operation",
+                    content: {
+                      "application/json": {
+                        schema: {
+                          $ref: "#/components/schemas/BoardResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          components: {
+            schemas: {
+              CreateUserRequest: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual request structure
+                }
+              },
+              UserResponse: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual response structure
+                }
+              },
+              UpdateUserRequest: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual request structure
+                }
+              },
+              CreateTeamRequest: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual request structure
+                }
+              },
+              TeamResponse: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual response structure
+                }
+              },
+              UpdateTeamRequest: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual request structure
+                }
+              },
+              CreateOrganizationRequest: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual request structure
+                }
+              },
+              OrganizationResponse: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual response structure
+                }
+              },
+              UpdateOrganizationRequest: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual request structure
+                }
+              },
+              CreateProjectRequest: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual request structure
+                }
+              },
+              ProjectResponse: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual response structure
+                }
+              },
+              UpdateProjectRequest: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual request structure
+                }
+              },
+              CreateTaskRequest: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual request structure
+                }
+              },
+              TaskResponse: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual response structure
+                }
+              },
+              UpdateTaskRequest: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual request structure
+                }
+              },
+              BoardResponse: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual response structure
+                }
+              },
+              SaveBoardRequest: {
+                type: "object",
+                properties: {
+                  // Define properties based on your actual request structure
+                }
+              }
+            }
+          }
+        },
+        dom_id: "#swagger-ui",
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        layout: "StandaloneLayout",
+      });
+    };
+</script>
+</body>
+</html>

@@ -7,6 +7,7 @@ import (
 	controllerTask "func/internal/controller/task"
 	controllerTeam "func/internal/controller/team"
 	controllerUser "func/internal/controller/user"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	"github.com/swaggo/gin-swagger"
@@ -36,6 +37,9 @@ func SetupRouter(
 	taskController *controllerTask.TaskController,
 	boardController *controllerBoard.BoardController,
 ) {
+	// Enable CORS for Swagger UI
+	router.Use(cors.Default())
+
 	// Swagger endpoint
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
