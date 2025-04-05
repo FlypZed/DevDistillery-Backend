@@ -1,6 +1,7 @@
 package server
 
 import (
+	controllerBoard "func/internal/controller/board"
 	controllerOrg "func/internal/controller/organization"
 	controllerProj "func/internal/controller/project"
 	controllerTask "func/internal/controller/task"
@@ -16,6 +17,7 @@ func SetupRouter(
 	organizationController *controllerOrg.OrganizationController,
 	projectController *controllerProj.ProjectController,
 	taskController *controllerTask.TaskController,
+	boardController *controllerBoard.BoardController,
 ) {
 	api := router.Group("/api")
 	{
@@ -57,6 +59,13 @@ func SetupRouter(
 			taskRoutes.GET("/:id", taskController.GetTask)
 			taskRoutes.PUT("/:id", taskController.UpdateTask)
 			taskRoutes.DELETE("/:id", taskController.DeleteTask)
+		}
+
+		boardRoutes := api.Group("/boards")
+		{
+			boardRoutes.GET("/:id", boardController.GetBoard)
+			boardRoutes.PUT("/:id", boardController.SaveBoard)
+			boardRoutes.GET("/ws/:boardId", boardController.HandleWebSocket)
 		}
 	}
 }
