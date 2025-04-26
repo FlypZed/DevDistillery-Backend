@@ -9,4 +9,5 @@ type TaskRepository interface {
 	FindByID(id string) (*domain.Task, error)
 	Update(task *domain.Task) error
 	Delete(id string) error
+	FindByProject(projectID string) ([]domain.Task, error)
 }

@@ -21,14 +21,22 @@ import (
 	serviceTask "func/internal/service/task"
 	serviceTeam "func/internal/service/team"
 	serviceUser "func/internal/service/user"
+	serviceWs "func/internal/service/websocket"
 
 	"func/pkg/infrastructure"
+
 	"github.com/gin-gonic/gin"
 )
 
 func New() *gin.Engine {
 	db := infrastructure.InitDB()
 
+	// Inicializa el hub de WebSocket
+	wsHub := serviceWs.NewHub()
+	go wsHub.Run()
+	wsService := serviceWs.NewWebSocketService(wsHub)
+
+	// Inicializa repositorios
 	userRepo := repositoryUser.NewUserRepository(db)
 	teamRepo := repositoryTeam.NewTeamRepository(db)
 	organizationRepo := repositoryOrg.NewOrganizationRepository(db)
@@ -36,6 +44,7 @@ func New() *gin.Engine {
 	taskRepo := repositoryTask.NewTaskRepository(db)
 	boardRepo := repositoryBoard.NewBoardRepository(db)
 
+	// Inicializa servicios
 	userService := serviceUser.NewUserService(userRepo)
 	teamService := serviceTeam.NewTeamService(teamRepo)
 	organizationService := serviceOrg.NewOrganizationService(organizationRepo)
@@ -43,12 +52,13 @@ func New() *gin.Engine {
 	taskService := serviceTask.NewTaskService(taskRepo)
 	boardService := serviceBoard.NewBoardService(boardRepo)
 
+	// Inicializa controladores pasando el wsService donde sea necesario
 	userController := controllerUser.NewUserController(userService)
 	teamController := controllerTeam.NewTeamController(teamService)
 	organizationController := controllerOrg.NewOrganizationController(organizationService)
 	projectController := controllerProj.NewProjectController(projectService)
-	taskController := controllerTask.NewTaskController(taskService)
-	boardController := controllerBoard.NewBoardController(boardService)
+	taskController := controllerTask.NewTaskController(taskService, wsService)
+	boardController := controllerBoard.NewBoardController(boardService, wsService)
 
 	router := gin.Default()
 

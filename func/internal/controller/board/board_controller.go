@@ -1,22 +1,27 @@
 package board
 
 import (
-	"context"
 	"net/http"
-	"sync"
+	"strings"
 
 	"func/internal/domain"
-	service "func/internal/service/board"
+	"func/internal/service/board"
+	ws "func/internal/service/websocket"
+	"func/pkg/infrastructure"
+
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+type BoardController struct {
+	service          board.Service
+	websocketService ws.Service
+}
+
+func NewBoardController(service board.Service, wsService ws.Service) *BoardController {
+	return &BoardController{
+		service:          service,
+		websocketService: wsService,
+	}
 }
 
 type BoardMessage struct {
@@ -26,33 +31,6 @@ type BoardMessage struct {
 	Data  map[string]any `json:"data,omitempty"`
 }
 
-type BoardController struct {
-	service service.Service
-	hubs    map[string]*BoardHub
-	mutex   sync.Mutex
-}
-
-func NewBoardController(service service.Service) *BoardController {
-	return &BoardController{
-		service: service,
-		hubs:    make(map[string]*BoardHub),
-	}
-}
-
-type Client struct {
-	hub  *BoardHub
-	conn *websocket.Conn
-	send chan BoardMessage
-}
-
-type BoardHub struct {
-	boardID   string
-	service   service.Service
-	clients   map[*Client]bool
-	register  chan *Client
-	broadcast chan BoardMessage
-}
-
 func (c *BoardController) HandleWebSocket(ctx *gin.Context) {
 	boardID := ctx.Param("boardId")
 	if boardID == "" {
@@ -60,102 +38,24 @@ func (c *BoardController) HandleWebSocket(ctx *gin.Context) {
 		return
 	}
 
-	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+	token := ctx.GetHeader("Authorization")
+	if token == "" {
+		token = ctx.Query("token")
+		if token == "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token required"})
+			return
+		}
+	} else {
+		token = strings.TrimPrefix(token, "Bearer ")
+	}
+
+	userID, err := infrastructure.ValidateJWT(token)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upgrade to WebSocket"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token: " + err.Error()})
 		return
 	}
 
-	c.mutex.Lock()
-	hub, exists := c.hubs[boardID]
-	if !exists {
-		hub = NewBoardHub(boardID, c.service)
-		c.hubs[boardID] = hub
-		go hub.Run()
-	}
-	c.mutex.Unlock()
-
-	client := &Client{
-		hub:  hub,
-		conn: conn,
-		send: make(chan BoardMessage, 256),
-	}
-
-	hub.register <- client
-
-	go client.writePump()
-	go client.readPump()
-}
-
-func NewBoardHub(boardID string, service service.Service) *BoardHub {
-	return &BoardHub{
-		boardID:   boardID,
-		service:   service,
-		clients:   make(map[*Client]bool),
-		register:  make(chan *Client),
-		broadcast: make(chan BoardMessage),
-	}
-}
-
-func (h *BoardHub) Run() {
-	for {
-		select {
-		case client := <-h.register:
-			h.clients[client] = true
-		case message := <-h.broadcast:
-			for client := range h.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(h.clients, client)
-				}
-			}
-		}
-	}
-}
-
-func (c *Client) readPump() {
-	defer func() {
-		c.hub.broadcast <- BoardMessage{Type: "USER_DISCONNECTED"}
-		c.conn.Close()
-	}()
-
-	for {
-		var msg BoardMessage
-		if err := c.conn.ReadJSON(&msg); err != nil {
-			break
-		}
-
-		switch msg.Type {
-		case "CLIENT_UPDATE":
-			board := &domain.Board{
-				ID:    c.hub.boardID,
-				Nodes: msg.Nodes,
-				Edges: msg.Edges,
-			}
-
-			if err := c.hub.service.UpdateBoard(context.Background(), board); err != nil {
-				continue
-			}
-
-			c.hub.broadcast <- BoardMessage{
-				Type:  "BOARD_UPDATED",
-				Nodes: msg.Nodes,
-				Edges: msg.Edges,
-			}
-		}
-	}
-}
-
-func (c *Client) writePump() {
-	defer c.conn.Close()
-
-	for message := range c.send {
-		if err := c.conn.WriteJSON(message); err != nil {
-			break
-		}
-	}
+	c.websocketService.HandleConnection(ctx.Writer, ctx.Request, boardID, userID)
 }
 
 func (c *BoardController) GetBoard(ctx *gin.Context) {
@@ -199,6 +99,11 @@ func (c *BoardController) SaveBoard(ctx *gin.Context) {
 		return
 	}
 
+	c.websocketService.Broadcast(board.ID, ws.Message{
+		Type: "BOARD_UPDATED",
+		Data: board,
+	})
+
 	ctx.JSON(http.StatusCreated, gin.H{"status": "success", "id": board.ID})
 }
 
@@ -233,6 +138,11 @@ func (c *BoardController) UpdateBoard(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	c.websocketService.Broadcast(boardID, ws.Message{
+		Type: "BOARD_UPDATED",
+		Data: board,
+	})
 
 	ctx.JSON(http.StatusOK, gin.H{"status": "success"})
 }

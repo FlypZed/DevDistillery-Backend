@@ -2,8 +2,9 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"func/internal/domain"
-	"func/internal/repository/task"
+	repository "func/internal/repository/task"
 )
 
 type taskService struct {
@@ -36,4 +37,51 @@ func (ts *taskService) UpdateTask(task *domain.Task) error {
 
 func (ts *taskService) DeleteTask(id string) error {
 	return ts.taskRepository.Delete(id)
+}
+
+func (ts *taskService) GetTasksByProject(projectID string) ([]domain.Task, error) {
+	if projectID == "" {
+		return nil, errors.New("project ID cannot be empty")
+	}
+
+	tasks, err := ts.taskRepository.FindByProject(projectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tasks: %w", err)
+	}
+
+	return tasks, nil
+}
+
+func (ts *taskService) UpdateTaskStatus(taskID string, status string) (*domain.Task, error) {
+	if taskID == "" {
+		return nil, errors.New("task ID cannot be empty")
+	}
+
+	if status == "" {
+		return nil, errors.New("status cannot be empty")
+	}
+
+	validStatuses := map[string]bool{
+		"backlog":     true,
+		"todo":        true,
+		"in_progress": true,
+		"done":        true,
+	}
+
+	if !validStatuses[status] {
+		return nil, errors.New("invalid task status")
+	}
+
+	task, err := ts.taskRepository.FindByID(taskID)
+	if err != nil {
+		return nil, fmt.Errorf("task not found: %w", err)
+	}
+
+	task.Status = status
+
+	if err := ts.taskRepository.Update(task); err != nil {
+		return nil, fmt.Errorf("failed to update task status: %w", err)
+	}
+
+	return task, nil
 }

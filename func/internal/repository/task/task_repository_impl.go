@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 	"func/internal/domain"
+
 	"gorm.io/gorm"
 )
 
@@ -41,4 +42,13 @@ func (tr *taskRepository) Delete(id string) error {
 		return errors.New("task ID is required")
 	}
 	return tr.db.Delete(&domain.Task{}, "id = ?", id).Error
+}
+
+func (tr *taskRepository) FindByProject(projectID string) ([]domain.Task, error) {
+	var tasks []domain.Task
+	result := tr.db.Where("project_id = ?", projectID).Find(&tasks)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return tasks, nil
 }
