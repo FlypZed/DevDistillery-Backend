@@ -1,69 +1,102 @@
-package controller
+package team
 
 import (
-	"func/internal/domain"
-	service "func/internal/service/team"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"func/internal/domain"
+	teamRepo "func/internal/repository/team"
+	"func/internal/service/team"
+
+	"github.com/gin-gonic/gin"
 )
 
 type TeamController struct {
-	teamService service.TeamService
+	service team.TeamService
 }
 
-func NewTeamController(teamService service.TeamService) *TeamController {
-	return &TeamController{teamService: teamService}
+func NewTeamController(service team.TeamService) *TeamController {
+	return &TeamController{service: service}
 }
 
-func (tc *TeamController) CreateTeam(c *gin.Context) {
+func (c *TeamController) Create(ctx *gin.Context) {
 	var team domain.Team
-	if err := c.ShouldBindJSON(&team); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ctx.ShouldBindJSON(&team); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := tc.teamService.CreateTeam(&team); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, team)
-}
-
-func (tc *TeamController) GetTeam(c *gin.Context) {
-	id := c.Param("id")
-	team, err := tc.teamService.GetTeam(id)
+	createdTeam, err := c.service.CreateTeam(team)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Team not found"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, team)
+	ctx.JSON(http.StatusCreated, createdTeam)
 }
 
-func (tc *TeamController) UpdateTeam(c *gin.Context) {
-	id := c.Param("id")
+func (c *TeamController) Get(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	team, err := c.service.GetTeam(id)
+	if err != nil {
+		if err == teamRepo.ErrTeamNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "team not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, team)
+}
+
+func (c *TeamController) GetByOrganization(ctx *gin.Context) {
+	orgID := ctx.Param("orgId")
+
+	teams, err := c.service.GetTeamsByOrganization(orgID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, teams)
+}
+
+func (c *TeamController) Update(ctx *gin.Context) {
+	id := ctx.Param("id")
+
 	var team domain.Team
-	if err := c.ShouldBindJSON(&team); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ctx.ShouldBindJSON(&team); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
 	team.ID = id
-	if err := tc.teamService.UpdateTeam(&team); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	updatedTeam, err := c.service.UpdateTeam(team)
+	if err != nil {
+		if err == teamRepo.ErrTeamNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "team not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, team)
+	ctx.JSON(http.StatusOK, updatedTeam)
 }
 
-func (tc *TeamController) DeleteTeam(c *gin.Context) {
-	id := c.Param("id")
-	if err := tc.teamService.DeleteTeam(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+func (c *TeamController) Delete(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	err := c.service.DeleteTeam(id)
+	if err != nil {
+		if err == teamRepo.ErrTeamNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "team not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Team deleted successfully"})
+	ctx.JSON(http.StatusNoContent, nil)
 }

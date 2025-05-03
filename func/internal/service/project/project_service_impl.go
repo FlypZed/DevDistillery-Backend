@@ -1,39 +1,42 @@
-package service
+package project
 
 import (
-	"errors"
 	"func/internal/domain"
 	"func/internal/repository/project"
 )
 
-type projectService struct {
-	projectRepository repository.ProjectRepository
+type ProjectServiceImpl struct {
+	repo project.ProjectRepository
 }
 
-func NewProjectService(projectRepository repository.ProjectRepository) ProjectService {
-	return &projectService{projectRepository: projectRepository}
+func NewProjectService(repo project.ProjectRepository) *ProjectServiceImpl {
+	return &ProjectServiceImpl{repo: repo}
 }
 
-func (ps *projectService) CreateProject(project *domain.Project) error {
-	if project.Name == "" || project.OrganizationID == "" {
-		return errors.New("name and organization ID are required")
-	}
-
-	return ps.projectRepository.Create(project)
+func (s *ProjectServiceImpl) CreateProject(project domain.Project) (domain.Project, error) {
+	return s.repo.Create(project)
 }
 
-func (ps *projectService) GetProject(id string) (*domain.Project, error) {
-	return ps.projectRepository.FindByID(id)
+func (s *ProjectServiceImpl) GetProject(id string) (domain.Project, error) {
+	return s.repo.GetByID(id)
 }
 
-func (ps *projectService) UpdateProject(project *domain.Project) error {
-	if project.ID == "" {
-		return errors.New("project ID is required")
-	}
-
-	return ps.projectRepository.Update(project)
+func (s *ProjectServiceImpl) GetProjectsByUser(userID string) ([]domain.Project, error) {
+	return s.repo.GetByUser(userID)
 }
 
-func (ps *projectService) DeleteProject(id string) error {
-	return ps.projectRepository.Delete(id)
+func (s *ProjectServiceImpl) GetProjectsByOrganization(orgID string) ([]domain.Project, error) {
+	return s.repo.GetByOrganization(orgID)
+}
+
+func (s *ProjectServiceImpl) UpdateProject(project domain.Project) (domain.Project, error) {
+	return s.repo.Update(project)
+}
+
+func (s *ProjectServiceImpl) AssignTeam(projectID, teamID string) (domain.Project, error) {
+	return s.repo.AssignTeam(projectID, teamID)
+}
+
+func (s *ProjectServiceImpl) DeleteProject(id string) error {
+	return s.repo.Delete(id)
 }

@@ -1,69 +1,138 @@
-package controller
+package project
 
 import (
-	"func/internal/domain"
-	service "func/internal/service/project"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"func/internal/domain"
+	proRepo "func/internal/repository/project"
+	"func/internal/service/project"
+
+	"github.com/gin-gonic/gin"
 )
 
 type ProjectController struct {
-	projectService service.ProjectService
+	service project.ProjectService
 }
 
-func NewProjectController(projectService service.ProjectService) *ProjectController {
-	return &ProjectController{projectService: projectService}
+func NewProjectController(service project.ProjectService) *ProjectController {
+	return &ProjectController{service: service}
 }
 
-func (pc *ProjectController) CreateProject(c *gin.Context) {
-	var project domain.Project
-	if err := c.ShouldBindJSON(&project); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func (c *ProjectController) Create(ctx *gin.Context) {
+	var proj domain.Project
+	if err := ctx.ShouldBindJSON(&proj); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := pc.projectService.CreateProject(&project); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, project)
-}
-
-func (pc *ProjectController) GetProject(c *gin.Context) {
-	id := c.Param("id")
-	project, err := pc.projectService.GetProject(id)
+	createdProj, err := c.service.CreateProject(proj)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, project)
+	ctx.JSON(http.StatusCreated, createdProj)
 }
 
-func (pc *ProjectController) UpdateProject(c *gin.Context) {
-	id := c.Param("id")
-	var project domain.Project
-	if err := c.ShouldBindJSON(&project); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func (c *ProjectController) Get(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	proj, err := c.service.GetProject(id)
+	if err != nil {
+		if err == proRepo.ErrProjectNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	project.ID = id
-	if err := pc.projectService.UpdateProject(&project); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, project)
+	ctx.JSON(http.StatusOK, proj)
 }
 
-func (pc *ProjectController) DeleteProject(c *gin.Context) {
-	id := c.Param("id")
-	if err := pc.projectService.DeleteProject(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+func (c *ProjectController) GetByUser(ctx *gin.Context) {
+	userID := ctx.Param("userId")
+
+	projects, err := c.service.GetProjectsByUser(userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Project deleted successfully"})
+	ctx.JSON(http.StatusOK, projects)
+}
+
+func (c *ProjectController) GetByOrganization(ctx *gin.Context) {
+	orgID := ctx.Param("orgId")
+
+	projects, err := c.service.GetProjectsByOrganization(orgID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, projects)
+}
+
+func (c *ProjectController) Update(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	var proj domain.Project
+	if err := ctx.ShouldBindJSON(&proj); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	proj.ID = id
+
+	updatedProj, err := c.service.UpdateProject(proj)
+	if err != nil {
+		if err == proRepo.ErrProjectNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, updatedProj)
+}
+
+func (c *ProjectController) AssignTeam(ctx *gin.Context) {
+	projectID := ctx.Param("id")
+
+	var request struct {
+		TeamID string `json:"teamId"`
+	}
+	if err := ctx.ShouldBindJSON(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	updatedProj, err := c.service.AssignTeam(projectID, request.TeamID)
+	if err != nil {
+		if err == proRepo.ErrProjectNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, updatedProj)
+}
+
+func (c *ProjectController) Delete(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	err := c.service.DeleteProject(id)
+	if err != nil {
+		if err == proRepo.ErrProjectNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, nil)
 }

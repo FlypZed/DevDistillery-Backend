@@ -1,69 +1,122 @@
-package controller
+package organization
 
 import (
-	"func/internal/domain"
-	service "func/internal/service/organization"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"func/internal/domain"
+	orgRepo "func/internal/repository/organization"
+	"func/internal/service/organization"
+
+	"github.com/gin-gonic/gin"
 )
 
 type OrganizationController struct {
-	organizationService service.OrganizationService
+	service organization.OrganizationService
 }
 
-func NewOrganizationController(organizationService service.OrganizationService) *OrganizationController {
-	return &OrganizationController{organizationService: organizationService}
+func NewOrganizationController(service organization.OrganizationService) *OrganizationController {
+	return &OrganizationController{service: service}
 }
 
-func (oc *OrganizationController) CreateOrganization(c *gin.Context) {
-	var organization domain.Organization
-	if err := c.ShouldBindJSON(&organization); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func (c *OrganizationController) Create(ctx *gin.Context) {
+	var org domain.Organization
+	if err := ctx.ShouldBindJSON(&org); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
-	if err := oc.organizationService.CreateOrganization(&organization); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if org.Name == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "name is required"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, organization)
-}
-
-func (oc *OrganizationController) GetOrganization(c *gin.Context) {
-	id := c.Param("id")
-	organization, err := oc.organizationService.GetOrganization(id)
+	createdOrg, err := c.service.CreateOrganization(org)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Organization not found"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, organization)
+	ctx.JSON(http.StatusCreated, createdOrg)
 }
 
-func (oc *OrganizationController) UpdateOrganization(c *gin.Context) {
-	id := c.Param("id")
-	var organization domain.Organization
-	if err := c.ShouldBindJSON(&organization); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func (c *OrganizationController) Get(ctx *gin.Context) {
+	id := ctx.Param("id")
+	if id == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "id is required"})
 		return
 	}
 
-	organization.ID = id
-	if err := oc.organizationService.UpdateOrganization(&organization); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	org, err := c.service.GetOrganization(id)
+	if err != nil {
+		if err == orgRepo.ErrOrganizationNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, organization)
+	ctx.JSON(http.StatusOK, org)
 }
 
-func (oc *OrganizationController) DeleteOrganization(c *gin.Context) {
-	id := c.Param("id")
-	if err := oc.organizationService.DeleteOrganization(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+func (c *OrganizationController) GetAll(ctx *gin.Context) {
+	orgs, err := c.service.GetAllOrganizations()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch organizations"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Organization deleted successfully"})
+	if len(orgs) == 0 {
+		ctx.JSON(http.StatusOK, []domain.Organization{})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, orgs)
+}
+
+func (c *OrganizationController) Update(ctx *gin.Context) {
+	id := ctx.Param("id")
+	if id == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "id is required"})
+		return
+	}
+
+	var org domain.Organization
+	if err := ctx.ShouldBindJSON(&org); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	org.ID = id
+	updatedOrg, err := c.service.UpdateOrganization(org)
+	if err != nil {
+		if err == orgRepo.ErrOrganizationNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, updatedOrg)
+}
+
+func (c *OrganizationController) Delete(ctx *gin.Context) {
+	id := ctx.Param("id")
+	if id == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "id is required"})
+		return
+	}
+
+	err := c.service.DeleteOrganization(id)
+	if err != nil {
+		if err == orgRepo.ErrOrganizationNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, nil)
 }

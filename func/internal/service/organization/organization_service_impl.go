@@ -1,39 +1,34 @@
-package service
+package organization
 
 import (
-	"errors"
 	"func/internal/domain"
 	"func/internal/repository/organization"
 )
 
-type organizationService struct {
-	organizationRepository repository.OrganizationRepository
+type OrganizationServiceImpl struct {
+	repo organization.OrganizationRepository
 }
 
-func NewOrganizationService(organizationRepository repository.OrganizationRepository) OrganizationService {
-	return &organizationService{organizationRepository: organizationRepository}
+func NewOrganizationService(repo organization.OrganizationRepository) *OrganizationServiceImpl {
+	return &OrganizationServiceImpl{repo: repo}
 }
 
-func (os *organizationService) CreateOrganization(organization *domain.Organization) error {
-	if organization.Name == "" {
-		return errors.New("name is required")
-	}
-
-	return os.organizationRepository.Create(organization)
+func (s *OrganizationServiceImpl) CreateOrganization(org domain.Organization) (domain.Organization, error) {
+	return s.repo.Create(org)
 }
 
-func (os *organizationService) GetOrganization(id string) (*domain.Organization, error) {
-	return os.organizationRepository.FindByID(id)
+func (s *OrganizationServiceImpl) GetOrganization(id string) (domain.Organization, error) {
+	return s.repo.GetByID(id)
 }
 
-func (os *organizationService) UpdateOrganization(organization *domain.Organization) error {
-	if organization.ID == "" {
-		return errors.New("organization ID is required")
-	}
-
-	return os.organizationRepository.Update(organization)
+func (s *OrganizationServiceImpl) GetAllOrganizations() ([]domain.Organization, error) {
+	return s.repo.GetAll()
 }
 
-func (os *organizationService) DeleteOrganization(id string) error {
-	return os.organizationRepository.Delete(id)
+func (s *OrganizationServiceImpl) UpdateOrganization(org domain.Organization) (domain.Organization, error) {
+	return s.repo.Update(org)
+}
+
+func (s *OrganizationServiceImpl) DeleteOrganization(id string) error {
+	return s.repo.Delete(id)
 }

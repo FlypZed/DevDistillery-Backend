@@ -7,6 +7,7 @@ import (
 	controllerTask "func/internal/controller/task"
 	controllerTeam "func/internal/controller/team"
 	controllerUser "func/internal/controller/user"
+	"log"
 
 	repositoryBoard "func/internal/repository/board"
 	repositoryOrg "func/internal/repository/organization"
@@ -29,7 +30,13 @@ import (
 )
 
 func New() *gin.Engine {
-	db := infrastructure.InitDB()
+	gormDB := infrastructure.InitDB()
+
+	sqlDB, err := gormDB.DB()
+	if err != nil {
+		log.Fatal("failed to get underlying sql.DB", err)
+	}
+	teamRepo := repositoryTeam.NewTeamRepository(sqlDB)
 
 	// Inicializa el hub de WebSocket
 	wsHub := serviceWs.NewHub()
@@ -37,12 +44,11 @@ func New() *gin.Engine {
 	wsService := serviceWs.NewWebSocketService(wsHub)
 
 	// Inicializa repositorios
-	userRepo := repositoryUser.NewUserRepository(db)
-	teamRepo := repositoryTeam.NewTeamRepository(db)
-	organizationRepo := repositoryOrg.NewOrganizationRepository(db)
-	projectRepo := repositoryProj.NewProjectRepository(db)
-	taskRepo := repositoryTask.NewTaskRepository(db)
-	boardRepo := repositoryBoard.NewBoardRepository(db)
+	userRepo := repositoryUser.NewUserRepository(gormDB)
+	organizationRepo := repositoryOrg.NewOrganizationRepository(sqlDB)
+	projectRepo := repositoryProj.NewProjectRepository(sqlDB)
+	taskRepo := repositoryTask.NewTaskRepository(gormDB)
+	boardRepo := repositoryBoard.NewBoardRepository(gormDB)
 
 	// Inicializa servicios
 	userService := serviceUser.NewUserService(userRepo)
@@ -52,7 +58,7 @@ func New() *gin.Engine {
 	taskService := serviceTask.NewTaskService(taskRepo)
 	boardService := serviceBoard.NewBoardService(boardRepo)
 
-	// Inicializa controladores pasando el wsService donde sea necesario
+	// Inicializa controladores
 	userController := controllerUser.NewUserController(userService)
 	teamController := controllerTeam.NewTeamController(teamService)
 	organizationController := controllerOrg.NewOrganizationController(organizationService)

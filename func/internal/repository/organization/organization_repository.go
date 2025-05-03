@@ -1,12 +1,16 @@
-package repository
+package organization
 
 import (
+	"errors"
 	"func/internal/domain"
 )
 
 type OrganizationRepository interface {
-	Create(organization *domain.Organization) error
-	FindByID(id string) (*domain.Organization, error)
-	Update(organization *domain.Organization) error
+	Create(org domain.Organization) (domain.Organization, error)
+	GetByID(id string) (domain.Organization, error)
+	GetAll() ([]domain.Organization, error)
+	Update(org domain.Organization) (domain.Organization, error)
 	Delete(id string) error
 }
+
+var ErrOrganizationNotFound = errors.New("organization not found")
