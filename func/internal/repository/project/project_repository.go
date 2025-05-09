@@ -8,4 +8,7 @@ type ProjectRepository interface {
 	GetByUser(userID string) ([]domain.Project, error)
 	Update(project domain.Project) (domain.Project, error)
 	Delete(id string) error
+	AddMember(projectID, userID string) error
+	RemoveMember(projectID, userID string) error
+	ListMembers(projectID string) ([]domain.Member, error)
 }

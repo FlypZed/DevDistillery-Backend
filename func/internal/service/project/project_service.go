@@ -8,4 +8,7 @@ type ProjectService interface {
 	GetProjectsByUser(userID string) ([]domain.Project, error)
 	UpdateProject(project domain.Project) (domain.Project, error)
 	DeleteProject(id string) error
+	AddMember(projectID, userID string) error
+	RemoveMember(projectID, userID string) error
+	ListMembers(projectID string) ([]domain.Member, error)
 }

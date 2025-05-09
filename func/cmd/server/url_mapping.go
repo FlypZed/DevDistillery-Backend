@@ -39,6 +39,11 @@ func SetupRouter(
 			projectRoutes.GET("/user/:userId", projectController.GetByUser)
 			projectRoutes.PUT("/:id", projectController.Update)
 			projectRoutes.DELETE("/:id", projectController.Delete)
+
+			// Member management endpoints
+			projectRoutes.POST("/:projectId/members", projectController.AddMember)
+			projectRoutes.DELETE("/:projectId/members/:userId", projectController.RemoveMember)
+			projectRoutes.GET("/:projectId/members", projectController.ListMembers)
 		}
 
 		taskRoutes := api.Group("/tasks")

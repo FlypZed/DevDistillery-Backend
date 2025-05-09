@@ -100,3 +100,71 @@ func (c *ProjectController) Delete(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusNoContent, nil)
 }
+
+func (c *ProjectController) AddMember(ctx *gin.Context) {
+	projectID := ctx.Param("projectId")
+	if projectID == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "project ID is required"})
+		return
+	}
+
+	var req struct {
+		UserID string `json:"userId"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := c.service.AddMember(projectID, req.UserID); err != nil {
+		if err == proRepo.ErrProjectNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{"status": "member added"})
+}
+
+func (c *ProjectController) RemoveMember(ctx *gin.Context) {
+	projectID := ctx.Param("projectId")
+	userID := ctx.Param("userId")
+
+	if projectID == "" || userID == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "project ID and user ID are required"})
+		return
+	}
+
+	if err := c.service.RemoveMember(projectID, userID); err != nil {
+		if err == proRepo.ErrProjectNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, nil)
+}
+
+func (c *ProjectController) ListMembers(ctx *gin.Context) {
+	projectID := ctx.Param("projectId")
+	if projectID == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "project ID is required"})
+		return
+	}
+
+	members, err := c.service.ListMembers(projectID)
+	if err != nil {
+		if err == proRepo.ErrProjectNotFound {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, members)
+}
