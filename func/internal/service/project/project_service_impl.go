@@ -25,16 +25,8 @@ func (s *ProjectServiceImpl) GetProjectsByUser(userID string) ([]domain.Project,
 	return s.repo.GetByUser(userID)
 }
 
-func (s *ProjectServiceImpl) GetProjectsByOrganization(orgID string) ([]domain.Project, error) {
-	return s.repo.GetByOrganization(orgID)
-}
-
 func (s *ProjectServiceImpl) UpdateProject(project domain.Project) (domain.Project, error) {
 	return s.repo.Update(project)
-}
-
-func (s *ProjectServiceImpl) AssignTeam(projectID, teamID string) (domain.Project, error) {
-	return s.repo.AssignTeam(projectID, teamID)
 }
 
 func (s *ProjectServiceImpl) DeleteProject(id string) error {

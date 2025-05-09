@@ -29,8 +29,6 @@ func InitDB() *gorm.DB {
 func autoMigrate(db *gorm.DB) error {
 	models := []interface{}{
 		&domain.User{},
-		&domain.Team{},
-		&domain.Organization{},
 		&domain.Project{},
 		&domain.Task{},
 	}

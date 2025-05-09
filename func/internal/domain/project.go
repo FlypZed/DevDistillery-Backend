@@ -18,8 +18,6 @@ type Project struct {
 	Name           string        `json:"name"`
 	Description    string        `json:"description"`
 	Status         ProjectStatus `json:"status"`
-	TeamID         string        `json:"teamId"`
-	OrganizationID string        `json:"organizationId"`
 	CreatedAt      time.Time     `json:"createdAt"`
 	UpdatedAt      time.Time     `json:"updatedAt"`
 }

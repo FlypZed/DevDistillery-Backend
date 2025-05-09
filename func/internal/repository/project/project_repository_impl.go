@@ -25,15 +25,15 @@ func (r *ProjectRepositoryImpl) Create(project domain.Project) (domain.Project, 
 	project.UpdatedAt = time.Now()
 
 	query := `INSERT INTO projects 
-              (id, name, description, status, team_id, organization_id, created_at, updated_at) 
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
-              RETURNING id, name, description, status, team_id, organization_id, created_at, updated_at`
+              (id, name, description, status, created_at, updated_at) 
+              VALUES ($1, $2, $3, $4, $5, $6) 
+              RETURNING id, name, description, status, created_at, updated_at`
 
 	err := r.db.QueryRowContext(context.Background(), query,
 		project.ID, project.Name, project.Description, project.Status,
-		project.TeamID, project.OrganizationID, project.CreatedAt, project.UpdatedAt).Scan(
+		project.CreatedAt, project.UpdatedAt).Scan(
 		&project.ID, &project.Name, &project.Description, &project.Status,
-		&project.TeamID, &project.OrganizationID, &project.CreatedAt, &project.UpdatedAt)
+		&project.CreatedAt, &project.UpdatedAt)
 
 	if err != nil {
 		return domain.Project{}, err
@@ -45,12 +45,12 @@ func (r *ProjectRepositoryImpl) Create(project domain.Project) (domain.Project, 
 func (r *ProjectRepositoryImpl) GetByID(id string) (domain.Project, error) {
 	var project domain.Project
 
-	query := `SELECT id, name, description, status, team_id, organization_id, created_at, updated_at 
+	query := `SELECT id, name, description, status, created_at, updated_at 
               FROM projects WHERE id = $1`
 
 	err := r.db.QueryRowContext(context.Background(), query, id).Scan(
 		&project.ID, &project.Name, &project.Description, &project.Status,
-		&project.TeamID, &project.OrganizationID, &project.CreatedAt, &project.UpdatedAt)
+		&project.CreatedAt, &project.UpdatedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -63,12 +63,12 @@ func (r *ProjectRepositoryImpl) GetByID(id string) (domain.Project, error) {
 }
 
 func (r *ProjectRepositoryImpl) GetByUser(userID string) ([]domain.Project, error) {
-	query := `SELECT p.id, p.name, p.description, p.status, p.team_id, p.organization_id, p.created_at, p.updated_at
+	query := `SELECT p.id, p.name, p.description, p.status, p.created_at, p.updated_at
               FROM projects p
-              JOIN team_members tm ON p.team_id = tm.team_id
-              WHERE tm.user_id = $1`
+              JOIN user_projects up ON p.id = up.project_id
+              WHERE up.user_id = $1`
 
-	rows, err := r.db.QueryContext(context.Background(), query, userID)
+	rows, err := r.db.Query(query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,39 +76,18 @@ func (r *ProjectRepositoryImpl) GetByUser(userID string) ([]domain.Project, erro
 
 	var projects []domain.Project
 	for rows.Next() {
-		var project domain.Project
-		if err := rows.Scan(
-			&project.ID, &project.Name, &project.Description, &project.Status,
-			&project.TeamID, &project.OrganizationID, &project.CreatedAt, &project.UpdatedAt,
-		); err != nil {
+		var p domain.Project
+		err := rows.Scan(
+			&p.ID, &p.Name, &p.Description, &p.Status,
+			&p.CreatedAt, &p.UpdatedAt)
+		if err != nil {
 			return nil, err
 		}
-		projects = append(projects, project)
+		projects = append(projects, p)
 	}
 
-	return projects, nil
-}
-
-func (r *ProjectRepositoryImpl) GetByOrganization(orgID string) ([]domain.Project, error) {
-	query := `SELECT id, name, description, status, team_id, organization_id, created_at, updated_at
-              FROM projects WHERE organization_id = $1`
-
-	rows, err := r.db.QueryContext(context.Background(), query, orgID)
-	if err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, err
-	}
-	defer rows.Close()
-
-	var projects []domain.Project
-	for rows.Next() {
-		var project domain.Project
-		if err := rows.Scan(
-			&project.ID, &project.Name, &project.Description, &project.Status,
-			&project.TeamID, &project.OrganizationID, &project.CreatedAt, &project.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		projects = append(projects, project)
 	}
 
 	return projects, nil
@@ -118,37 +97,14 @@ func (r *ProjectRepositoryImpl) Update(project domain.Project) (domain.Project, 
 	project.UpdatedAt = time.Now()
 
 	query := `UPDATE projects 
-              SET name = $1, description = $2, status = $3, team_id = $4, organization_id = $5, updated_at = $6 
-              WHERE id = $7 
-              RETURNING id, name, description, status, team_id, organization_id, created_at, updated_at`
+              SET name = $1, description = $2, status = $3, updated_at = $4 
+              WHERE id = $5 
+              RETURNING id, name, description, status, created_at, updated_at`
 
 	err := r.db.QueryRowContext(context.Background(), query,
-		project.Name, project.Description, project.Status, project.TeamID,
-		project.OrganizationID, project.UpdatedAt, project.ID).Scan(
+		project.Name, project.Description, project.Status, project.UpdatedAt, project.ID).Scan(
 		&project.ID, &project.Name, &project.Description, &project.Status,
-		&project.TeamID, &project.OrganizationID, &project.CreatedAt, &project.UpdatedAt)
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return domain.Project{}, ErrProjectNotFound
-		}
-		return domain.Project{}, err
-	}
-
-	return project, nil
-}
-
-func (r *ProjectRepositoryImpl) AssignTeam(projectID, teamID string) (domain.Project, error) {
-	query := `UPDATE projects 
-              SET team_id = $1, updated_at = $2 
-              WHERE id = $3 
-              RETURNING id, name, description, status, team_id, organization_id, created_at, updated_at`
-
-	var project domain.Project
-	err := r.db.QueryRowContext(context.Background(), query,
-		teamID, time.Now(), projectID).Scan(
-		&project.ID, &project.Name, &project.Description, &project.Status,
-		&project.TeamID, &project.OrganizationID, &project.CreatedAt, &project.UpdatedAt)
+		&project.CreatedAt, &project.UpdatedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

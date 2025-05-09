@@ -62,18 +62,6 @@ func (c *ProjectController) GetByUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, projects)
 }
 
-func (c *ProjectController) GetByOrganization(ctx *gin.Context) {
-	orgID := ctx.Param("orgId")
-
-	projects, err := c.service.GetProjectsByOrganization(orgID)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, projects)
-}
-
 func (c *ProjectController) Update(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -85,30 +73,6 @@ func (c *ProjectController) Update(ctx *gin.Context) {
 	proj.ID = id
 
 	updatedProj, err := c.service.UpdateProject(proj)
-	if err != nil {
-		if err == proRepo.ErrProjectNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, updatedProj)
-}
-
-func (c *ProjectController) AssignTeam(ctx *gin.Context) {
-	projectID := ctx.Param("id")
-
-	var request struct {
-		TeamID string `json:"teamId"`
-	}
-	if err := ctx.ShouldBindJSON(&request); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	updatedProj, err := c.service.AssignTeam(projectID, request.TeamID)
 	if err != nil {
 		if err == proRepo.ErrProjectNotFound {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})

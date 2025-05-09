@@ -2,10 +2,8 @@ package server
 
 import (
 	controllerBoard "func/internal/controller/board"
-	controllerOrg "func/internal/controller/organization"
 	controllerProj "func/internal/controller/project"
 	controllerTask "func/internal/controller/task"
-	controllerTeam "func/internal/controller/team"
 	controllerUser "func/internal/controller/user"
 
 	"github.com/gin-contrib/cors"
@@ -17,8 +15,6 @@ import (
 func SetupRouter(
 	router *gin.Engine,
 	userController *controllerUser.UserController,
-	teamController *controllerTeam.TeamController,
-	organizationController *controllerOrg.OrganizationController,
 	projectController *controllerProj.ProjectController,
 	taskController *controllerTask.TaskController,
 	boardController *controllerBoard.BoardController,
@@ -36,32 +32,12 @@ func SetupRouter(
 			userRoutes.DELETE("/:id", userController.DeleteUser)
 		}
 
-		teamRoutes := api.Group("/teams")
-		{
-			teamRoutes.POST("/", teamController.Create)
-			teamRoutes.GET("/:id", teamController.Get)
-			teamRoutes.GET("/organization/:orgId", teamController.GetByOrganization)
-			teamRoutes.PUT("/:id", teamController.Update)
-			teamRoutes.DELETE("/:id", teamController.Delete)
-		}
-
-		organizationRoutes := api.Group("/organizations")
-		{
-			organizationRoutes.POST("/", organizationController.Create)
-			organizationRoutes.GET("/", organizationController.GetAll)
-			organizationRoutes.GET("/:id", organizationController.Get)
-			organizationRoutes.PUT("/:id", organizationController.Update)
-			organizationRoutes.DELETE("/:id", organizationController.Delete)
-		}
-
 		projectRoutes := api.Group("/projects")
 		{
 			projectRoutes.POST("/", projectController.Create)
 			projectRoutes.GET("/:id", projectController.Get)
 			projectRoutes.GET("/user/:userId", projectController.GetByUser)
-			projectRoutes.GET("/organization/:orgId", projectController.GetByOrganization)
 			projectRoutes.PUT("/:id", projectController.Update)
-			projectRoutes.PUT("/:id/team", projectController.AssignTeam)
 			projectRoutes.DELETE("/:id", projectController.Delete)
 		}
 
