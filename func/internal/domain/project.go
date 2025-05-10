@@ -18,6 +18,7 @@ type Project struct {
 	Name        string        `json:"name"`
 	Description string        `json:"description"`
 	Status      ProjectStatus `json:"status"`
+	CreatedBy   string        `json:"createdBy"`
 	Members     []Member      `gorm:"-" json:"members"`
 	CreatedAt   time.Time     `json:"createdAt"`
 	UpdatedAt   time.Time     `json:"updatedAt"`

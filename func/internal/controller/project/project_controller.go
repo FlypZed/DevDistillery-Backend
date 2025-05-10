@@ -2,10 +2,12 @@ package project
 
 import (
 	"net/http"
+	"strings"
 
 	"func/internal/domain"
 	proRepo "func/internal/repository/project"
 	"func/internal/service/project"
+	"func/pkg/infrastructure"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,6 +26,21 @@ func (c *ProjectController) Create(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	token := ctx.GetHeader("Authorization")
+	if token == "" {
+		token = ctx.Query("token")
+	} else {
+		token = strings.TrimPrefix(token, "Bearer ")
+	}
+
+	userID, err := infrastructure.ValidateJWT(token)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		return
+	}
+
+	proj.CreatedBy = userID
 
 	createdProj, err := c.service.CreateProject(proj)
 	if err != nil {

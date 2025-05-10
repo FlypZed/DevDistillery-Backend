@@ -2,6 +2,7 @@ package project
 
 import (
 	"errors"
+	"fmt"
 	"func/internal/domain"
 	"func/internal/repository/project"
 )
@@ -15,7 +16,24 @@ func NewProjectService(repo project.ProjectRepository) *ProjectServiceImpl {
 }
 
 func (s *ProjectServiceImpl) CreateProject(project domain.Project) (domain.Project, error) {
-	return s.repo.Create(project)
+	createdProject, err := s.repo.Create(project)
+	if err != nil {
+		return domain.Project{}, err
+	}
+
+	if project.CreatedBy != "" {
+		if err := s.repo.AddMember(createdProject.ID, project.CreatedBy); err != nil {
+			_ = s.repo.Delete(createdProject.ID)
+			return domain.Project{}, fmt.Errorf("failed to add creator as member: %v", err)
+		}
+
+		members, err := s.repo.ListMembers(createdProject.ID)
+		if err == nil {
+			createdProject.Members = members
+		}
+	}
+
+	return createdProject, nil
 }
 
 func (s *ProjectServiceImpl) GetProject(id string) (domain.Project, error) {

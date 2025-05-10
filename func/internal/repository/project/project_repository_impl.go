@@ -25,14 +25,14 @@ func (r *ProjectRepositoryImpl) Create(project domain.Project) (domain.Project, 
 	project.UpdatedAt = time.Now()
 
 	query := `INSERT INTO project 
-              (id, name, description, status, created_at, updated_at) 
-              VALUES ($1, $2, $3, $4, $5, $6) 
-              RETURNING id, name, description, status, created_at, updated_at`
+              (id, name, description, status, created_by, created_at, updated_at) 
+              VALUES ($1, $2, $3, $4, $5, $6, $7) 
+              RETURNING id, name, description, status, created_by, created_at, updated_at`
 
 	err := r.db.QueryRowContext(context.Background(), query,
-		project.ID, project.Name, project.Description, project.Status,
+		project.ID, project.Name, project.Description, project.Status, project.CreatedBy,
 		project.CreatedAt, project.UpdatedAt).Scan(
-		&project.ID, &project.Name, &project.Description, &project.Status,
+		&project.ID, &project.Name, &project.Description, &project.Status, &project.CreatedBy,
 		&project.CreatedAt, &project.UpdatedAt)
 
 	if err != nil {
@@ -63,10 +63,11 @@ func (r *ProjectRepositoryImpl) GetByID(id string) (domain.Project, error) {
 }
 
 func (r *ProjectRepositoryImpl) GetByUser(userID string) ([]domain.Project, error) {
-	query := `SELECT p.id, p.name, p.description, p.status, p.created_at, p.updated_at
+	query := `SELECT p.id, p.name, p.description, p.status, p.created_by, p.created_at, p.updated_at
               FROM project p
-              JOIN user_projects up ON p.id = up.project_id
-              WHERE up.user_id = $1`
+              LEFT JOIN project_members pm ON p.id = pm.project_id
+              WHERE pm.user_id = $1 OR p.created_by = $1
+              GROUP BY p.id`
 
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
@@ -78,7 +79,7 @@ func (r *ProjectRepositoryImpl) GetByUser(userID string) ([]domain.Project, erro
 	for rows.Next() {
 		var p domain.Project
 		err := rows.Scan(
-			&p.ID, &p.Name, &p.Description, &p.Status,
+			&p.ID, &p.Name, &p.Description, &p.Status, &p.CreatedBy,
 			&p.CreatedAt, &p.UpdatedAt)
 		if err != nil {
 			return nil, err
