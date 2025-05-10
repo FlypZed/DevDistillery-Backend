@@ -24,7 +24,7 @@ func (r *ProjectRepositoryImpl) Create(project domain.Project) (domain.Project, 
 	project.CreatedAt = time.Now()
 	project.UpdatedAt = time.Now()
 
-	query := `INSERT INTO projects 
+	query := `INSERT INTO project 
               (id, name, description, status, created_at, updated_at) 
               VALUES ($1, $2, $3, $4, $5, $6) 
               RETURNING id, name, description, status, created_at, updated_at`
@@ -46,7 +46,7 @@ func (r *ProjectRepositoryImpl) GetByID(id string) (domain.Project, error) {
 	var project domain.Project
 
 	query := `SELECT id, name, description, status, created_at, updated_at 
-              FROM projects WHERE id = $1`
+              FROM project WHERE id = $1`
 
 	err := r.db.QueryRowContext(context.Background(), query, id).Scan(
 		&project.ID, &project.Name, &project.Description, &project.Status,
@@ -64,7 +64,7 @@ func (r *ProjectRepositoryImpl) GetByID(id string) (domain.Project, error) {
 
 func (r *ProjectRepositoryImpl) GetByUser(userID string) ([]domain.Project, error) {
 	query := `SELECT p.id, p.name, p.description, p.status, p.created_at, p.updated_at
-              FROM projects p
+              FROM project p
               JOIN user_projects up ON p.id = up.project_id
               WHERE up.user_id = $1`
 
@@ -96,7 +96,7 @@ func (r *ProjectRepositoryImpl) GetByUser(userID string) ([]domain.Project, erro
 func (r *ProjectRepositoryImpl) Update(project domain.Project) (domain.Project, error) {
 	project.UpdatedAt = time.Now()
 
-	query := `UPDATE projects 
+	query := `UPDATE project
               SET name = $1, description = $2, status = $3, updated_at = $4 
               WHERE id = $5 
               RETURNING id, name, description, status, created_at, updated_at`
@@ -117,7 +117,7 @@ func (r *ProjectRepositoryImpl) Update(project domain.Project) (domain.Project, 
 }
 
 func (r *ProjectRepositoryImpl) Delete(id string) error {
-	query := `DELETE FROM projects WHERE id = $1`
+	query := `DELETE FROM project WHERE id = $1`
 
 	result, err := r.db.ExecContext(context.Background(), query, id)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	controllerTask "func/internal/controller/task"
 	controllerUser "func/internal/controller/user"
 	"log"
+	"time"
 
 	repositoryBoard "func/internal/repository/board"
 	repositoryProj "func/internal/repository/project"
@@ -20,6 +21,7 @@ import (
 
 	"func/pkg/infrastructure"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -55,6 +57,16 @@ func New() *gin.Engine {
 	boardController := controllerBoard.NewBoardController(boardService, wsService)
 
 	router := gin.Default()
+
+	// Configuracion de CORS
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:8080"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	SetupRouter(
 		router,
