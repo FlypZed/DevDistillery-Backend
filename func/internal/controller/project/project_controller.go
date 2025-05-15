@@ -127,7 +127,7 @@ func (c *ProjectController) Delete(ctx *gin.Context) {
 }
 
 func (c *ProjectController) AddMember(ctx *gin.Context) {
-	projectID := ctx.Param("projectId")
+	projectID := ctx.Param("id")
 	if projectID == "" {
 		response.Error(ctx, http.StatusBadRequest, "Project ID is required")
 		return
@@ -154,7 +154,7 @@ func (c *ProjectController) AddMember(ctx *gin.Context) {
 }
 
 func (c *ProjectController) RemoveMember(ctx *gin.Context) {
-	projectID := ctx.Param("projectId")
+	projectID := ctx.Param("id")
 	userID := ctx.Param("userId")
 
 	if projectID == "" || userID == "" {
@@ -175,7 +175,7 @@ func (c *ProjectController) RemoveMember(ctx *gin.Context) {
 }
 
 func (c *ProjectController) ListMembers(ctx *gin.Context) {
-	projectID := ctx.Param("projectId")
+	projectID := ctx.Param("id")
 	if projectID == "" {
 		response.Error(ctx, http.StatusBadRequest, "Project ID is required")
 		return
