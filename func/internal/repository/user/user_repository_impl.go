@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 	"func/internal/domain"
+
 	"gorm.io/gorm"
 )
 
@@ -27,6 +28,14 @@ func (ur *userRepository) FindByID(id string) (*domain.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (ur *userRepository) FindAll() ([]domain.User, error) {
+	var users []domain.User
+	if err := ur.db.Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 func (ur *userRepository) Update(user *domain.User) error {

@@ -26,6 +26,10 @@ func (us *userService) GetUser(id string) (*domain.User, error) {
 	return us.userRepository.FindByID(id)
 }
 
+func (us *userService) GetAllUsers() ([]domain.User, error) {
+	return us.userRepository.FindAll()
+}
+
 func (us *userService) UpdateUser(user *domain.User) error {
 	if user.ID == "" {
 		return errors.New("user ID is required")

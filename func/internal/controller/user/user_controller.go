@@ -43,6 +43,16 @@ func (uc *UserController) GetUser(c *gin.Context) {
 	response.Success(c, http.StatusOK, user, "User retrieved successfully")
 }
 
+func (uc *UserController) GetAllUsers(c *gin.Context) {
+	users, err := uc.userService.GetAllUsers()
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to get users: "+err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, users, "Users retrieved successfully")
+}
+
 func (uc *UserController) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	var user domain.User

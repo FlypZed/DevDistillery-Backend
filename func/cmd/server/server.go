@@ -6,6 +6,7 @@ import (
 	controllerTask "func/internal/controller/task"
 	controllerUser "func/internal/controller/user"
 	"log"
+	"net/http"
 	"time"
 
 	repositoryBoard "func/internal/repository/board"
@@ -33,6 +34,29 @@ func New() *gin.Engine {
 		log.Fatal("failed to get underlying sql.DB", err)
 	}
 
+	// Configuración inicial del router
+	router := gin.New()
+
+	// Middleware de CORS
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
+	router.Use(func(c *gin.Context) {
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		c.Next()
+	})
+
+	router.Use(gin.Recovery())
+
 	// Inicializa el hub de WebSocket
 	wsHub := serviceWs.NewHub()
 	go wsHub.Run()
@@ -55,18 +79,6 @@ func New() *gin.Engine {
 	projectController := controllerProj.NewProjectController(projectService)
 	taskController := controllerTask.NewTaskController(taskService, wsService)
 	boardController := controllerBoard.NewBoardController(boardService, wsService)
-
-	router := gin.Default()
-
-	// Configuracion de CORS
-	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:8080"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
 
 	SetupRouter(
 		router,
