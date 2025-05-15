@@ -3,8 +3,10 @@ package controller
 import (
 	"func/internal/domain"
 	service "func/internal/service/user"
-	"github.com/gin-gonic/gin"
+	"func/pkg/response"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type UserController struct {
@@ -18,52 +20,52 @@ func NewUserController(userService service.UserService) *UserController {
 func (uc *UserController) CreateUser(c *gin.Context) {
 	var user domain.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusBadRequest, "Invalid user data: "+err.Error())
 		return
 	}
 
 	if err := uc.userService.CreateUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusInternalServerError, "Failed to create user: "+err.Error())
 		return
 	}
 
-	c.JSON(http.StatusCreated, user)
+	response.Success(c, http.StatusCreated, user, "User created successfully")
 }
 
 func (uc *UserController) GetUser(c *gin.Context) {
 	id := c.Param("id")
 	user, err := uc.userService.GetUser(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		response.Error(c, http.StatusNotFound, "User not found")
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	response.Success(c, http.StatusOK, user, "User retrieved successfully")
 }
 
 func (uc *UserController) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	var user domain.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusBadRequest, "Invalid user data: "+err.Error())
 		return
 	}
 
 	user.ID = id
 	if err := uc.userService.UpdateUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusInternalServerError, "Failed to update user: "+err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	response.Success(c, http.StatusOK, user, "User updated successfully")
 }
 
 func (uc *UserController) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 	if err := uc.userService.DeleteUser(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, http.StatusInternalServerError, "Failed to delete user: "+err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+	response.Success(c, http.StatusOK, nil, "User deleted successfully")
 }

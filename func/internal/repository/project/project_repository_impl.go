@@ -62,10 +62,10 @@ func (r *ProjectRepositoryImpl) GetByID(id string) (domain.Project, error) {
 	return project, nil
 }
 
-func (r *ProjectRepositoryImpl) GetByUser(userID string) ([]domain.Project, error) {
+func (r *ProjectRepositoryImpl) GetByUser(userID int) ([]domain.Project, error) {
 	query := `SELECT p.id, p.name, p.description, p.status, p.created_by, p.created_at, p.updated_at
               FROM project p
-              LEFT JOIN project_members pm ON p.id = pm.project_id
+              LEFT JOIN project_member pm ON p.id = pm.project_id
               WHERE pm.user_id = $1 OR p.created_by = $1
               GROUP BY p.id`
 
@@ -138,7 +138,7 @@ func (r *ProjectRepositoryImpl) Delete(id string) error {
 }
 
 func (r *ProjectRepositoryImpl) AddMember(projectID, userID string) error {
-	query := `INSERT INTO project_members (project_id, user_id, role, joined_at) 
+	query := `INSERT INTO project_member (project_id, user_id, role, joined_at) 
               VALUES ($1, $2, 'member', NOW()) 
               ON CONFLICT (project_id, user_id) DO NOTHING`
 	_, err := r.db.Exec(query, projectID, userID)
@@ -146,7 +146,7 @@ func (r *ProjectRepositoryImpl) AddMember(projectID, userID string) error {
 }
 
 func (r *ProjectRepositoryImpl) RemoveMember(projectID, userID string) error {
-	query := `DELETE FROM project_members WHERE project_id = $1 AND user_id = $2`
+	query := `DELETE FROM project_member WHERE project_id = $1 AND user_id = $2`
 	result, err := r.db.Exec(query, projectID, userID)
 	if err != nil {
 		return err
@@ -166,7 +166,7 @@ func (r *ProjectRepositoryImpl) RemoveMember(projectID, userID string) error {
 
 func (r *ProjectRepositoryImpl) ListMembers(projectID string) ([]domain.Member, error) {
 	query := `SELECT user_id, project_id, role, joined_at 
-              FROM project_members 
+              FROM project_member
               WHERE project_id = $1`
 
 	rows, err := r.db.Query(query, projectID)

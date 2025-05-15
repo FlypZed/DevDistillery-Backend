@@ -1,10 +1,9 @@
-// internal/service/user/user_service_impl.go
 package service
 
 import (
 	"errors"
 	"func/internal/domain"
-	"func/internal/repository/user"
+	repository "func/internal/repository/user"
 )
 
 type userService struct {

@@ -21,12 +21,12 @@ import java.util.Map;
 @Service
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
-    private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final RestTemplate restTemplate;
 
-    public CustomOAuth2UserService(JwtService jwtService, UserRepository userRepository) {
-        this.jwtService = jwtService;
+    public CustomOAuth2UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
+        this.restTemplate = new RestTemplate();
     }
 
     @Override
@@ -40,6 +40,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String avatarUrl = (String) attributes.get("avatar_url");
 
         String email = getEmail(userRequest);
+        List<Map<String, Object>> repos = getPublicRepos(userRequest);
 
         User user = userRepository.findByEmailOrGithubId(email, githubId)
                 .orElse(new User());
@@ -49,15 +50,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         user.setPicture(avatarUrl);
         user.setGithubId(githubId);
         user.setGithubLogin(login);
+        user.setPublicReposCount(repos != null ? repos.size() : 0);
 
         userRepository.save(user);
 
-        return new CustomOAuth2User(oAuth2User, email, name, avatarUrl);
+        return new CustomOAuth2User(oAuth2User, email, name, avatarUrl, repos);
     }
 
-
     private String getEmail(OAuth2UserRequest userRequest) {
-        RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(userRequest.getAccessToken().getTokenValue());
         HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -77,5 +77,23 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             }
         }
         throw new OAuth2AuthenticationException("No se pudo obtener el email del usuario");
+    }
+
+    private List<Map<String, Object>> getPublicRepos(OAuth2UserRequest userRequest) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(userRequest.getAccessToken().getTokenValue());
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                "https://api.github.com/user/repos?type=public",
+                HttpMethod.GET,
+                entity,
+                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+        );
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            return response.getBody();
+        }
+        return null;
     }
 }

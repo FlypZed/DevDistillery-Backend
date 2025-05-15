@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -42,14 +43,32 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func ValidateJWT(token string) (string, error) {
+func ValidateJWT(token string) (int, error) {
 	req, err := http.NewRequest("GET", "http://localhost:8080/api/auth/validate", nil)
-	req.Header.Add("Authorization", "Bearer "+token)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil || resp.StatusCode != 200 {
-		return "", fmt.Errorf("invalid token")
+	if err != nil {
+		return 0, fmt.Errorf("failed to create request: %v", err)
 	}
-	return "user-id-from-token", nil
+	req.Header.Add("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("failed to send request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("invalid token (status %d)", resp.StatusCode)
+	}
+
+	var response struct {
+		UserID int `json:"userId"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return 0, fmt.Errorf("failed to decode response: %v", err)
+	}
+
+	return response.UserID, nil
 }
 
 func (s *service) Broadcast(roomID string, message Message) {

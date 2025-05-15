@@ -13,6 +13,7 @@ public class User {
     private String picture;
     private Long githubId;
     private String githubLogin;
+    private Integer publicReposCount;
 
     // Getters y setters
     public Long getId() {
@@ -61,5 +62,13 @@ public class User {
 
     public void setGithubLogin(String githubLogin) {
         this.githubLogin = githubLogin;
+    }
+
+    public Integer getPublicReposCount() {
+        return publicReposCount;
+    }
+
+    public void setPublicReposCount(Integer publicReposCount) {
+        this.publicReposCount = publicReposCount;
     }
 }

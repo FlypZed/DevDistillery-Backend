@@ -1,13 +1,14 @@
 package project
 
 import (
+	"log"
 	"net/http"
-	"strings"
+	"strconv"
 
 	"func/internal/domain"
 	proRepo "func/internal/repository/project"
 	"func/internal/service/project"
-	"func/pkg/infrastructure"
+	"func/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,32 +24,28 @@ func NewProjectController(service project.ProjectService) *ProjectController {
 func (c *ProjectController) Create(ctx *gin.Context) {
 	var proj domain.Project
 	if err := ctx.ShouldBindJSON(&proj); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("[ProjectController] Error al bindear JSON: %v\n", err)
+		response.Error(ctx, http.StatusBadRequest, "Invalid request data: "+err.Error())
 		return
 	}
 
 	token := ctx.GetHeader("Authorization")
 	if token == "" {
 		token = ctx.Query("token")
-	} else {
-		token = strings.TrimPrefix(token, "Bearer ")
 	}
-
-	userID, err := infrastructure.ValidateJWT(token)
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+	if token == "" {
+		response.Error(ctx, http.StatusUnauthorized, "Authorization token required")
 		return
 	}
-
-	proj.CreatedBy = userID
 
 	createdProj, err := c.service.CreateProject(proj)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ProjectController] Error creating project: %v\n", err)
+		response.Error(ctx, http.StatusInternalServerError, "Failed to create project: "+err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, createdProj)
+	response.Success(ctx, http.StatusCreated, createdProj, "Project created successfully")
 }
 
 func (c *ProjectController) Get(ctx *gin.Context) {
@@ -57,26 +54,37 @@ func (c *ProjectController) Get(ctx *gin.Context) {
 	proj, err := c.service.GetProject(id)
 	if err != nil {
 		if err == proRepo.ErrProjectNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			response.Error(ctx, http.StatusNotFound, "Project not found")
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(ctx, http.StatusInternalServerError, "Failed to get project: "+err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusOK, proj)
+	response.Success(ctx, http.StatusOK, proj, "Project fetched successfully")
 }
 
 func (c *ProjectController) GetByUser(ctx *gin.Context) {
-	userID := ctx.Param("userId")
+	userIDStr := ctx.Param("userId")
+	log.Printf("Received userId param: %s", userIDStr)
+
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		log.Printf("Error converting userId to int: %v", err)
+		response.Error(ctx, http.StatusBadRequest, "Invalid user ID format")
+		return
+	}
+	log.Printf("Parsed userId: %d", userID)
 
 	projects, err := c.service.GetProjectsByUser(userID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Error retrieving projects for user %d: %v", userID, err)
+		response.Error(ctx, http.StatusInternalServerError, "Failed to get user projects: "+err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusOK, projects)
+	log.Printf("Found %d projects for user %d", len(projects), userID)
+	response.Success(ctx, http.StatusOK, projects, "User projects fetched successfully")
 }
 
 func (c *ProjectController) Update(ctx *gin.Context) {
@@ -84,7 +92,7 @@ func (c *ProjectController) Update(ctx *gin.Context) {
 
 	var proj domain.Project
 	if err := ctx.ShouldBindJSON(&proj); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(ctx, http.StatusBadRequest, "Invalid request data: "+err.Error())
 		return
 	}
 	proj.ID = id
@@ -92,14 +100,14 @@ func (c *ProjectController) Update(ctx *gin.Context) {
 	updatedProj, err := c.service.UpdateProject(proj)
 	if err != nil {
 		if err == proRepo.ErrProjectNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			response.Error(ctx, http.StatusNotFound, "Project not found")
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(ctx, http.StatusInternalServerError, "Failed to update project: "+err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusOK, updatedProj)
+	response.Success(ctx, http.StatusOK, updatedProj, "Project updated successfully")
 }
 
 func (c *ProjectController) Delete(ctx *gin.Context) {
@@ -108,20 +116,20 @@ func (c *ProjectController) Delete(ctx *gin.Context) {
 	err := c.service.DeleteProject(id)
 	if err != nil {
 		if err == proRepo.ErrProjectNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			response.Error(ctx, http.StatusNotFound, "Project not found")
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(ctx, http.StatusInternalServerError, "Failed to delete project: "+err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusNoContent, nil)
+	response.Success(ctx, http.StatusNoContent, nil, "Project deleted successfully")
 }
 
 func (c *ProjectController) AddMember(ctx *gin.Context) {
 	projectID := ctx.Param("projectId")
 	if projectID == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "project ID is required"})
+		response.Error(ctx, http.StatusBadRequest, "Project ID is required")
 		return
 	}
 
@@ -129,20 +137,20 @@ func (c *ProjectController) AddMember(ctx *gin.Context) {
 		UserID string `json:"userId"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(ctx, http.StatusBadRequest, "Invalid request data: "+err.Error())
 		return
 	}
 
 	if err := c.service.AddMember(projectID, req.UserID); err != nil {
 		if err == proRepo.ErrProjectNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			response.Error(ctx, http.StatusNotFound, "Project not found")
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(ctx, http.StatusInternalServerError, "Failed to add member: "+err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{"status": "member added"})
+	response.Success(ctx, http.StatusCreated, nil, "Member added successfully")
 }
 
 func (c *ProjectController) RemoveMember(ctx *gin.Context) {
@@ -150,38 +158,38 @@ func (c *ProjectController) RemoveMember(ctx *gin.Context) {
 	userID := ctx.Param("userId")
 
 	if projectID == "" || userID == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "project ID and user ID are required"})
+		response.Error(ctx, http.StatusBadRequest, "Project ID and user ID are required")
 		return
 	}
 
 	if err := c.service.RemoveMember(projectID, userID); err != nil {
 		if err == proRepo.ErrProjectNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			response.Error(ctx, http.StatusNotFound, "Project not found")
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(ctx, http.StatusInternalServerError, "Failed to remove member: "+err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusNoContent, nil)
+	response.Success(ctx, http.StatusNoContent, nil, "Member removed successfully")
 }
 
 func (c *ProjectController) ListMembers(ctx *gin.Context) {
 	projectID := ctx.Param("projectId")
 	if projectID == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "project ID is required"})
+		response.Error(ctx, http.StatusBadRequest, "Project ID is required")
 		return
 	}
 
 	members, err := c.service.ListMembers(projectID)
 	if err != nil {
 		if err == proRepo.ErrProjectNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+			response.Error(ctx, http.StatusNotFound, "Project not found")
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(ctx, http.StatusInternalServerError, "Failed to list members: "+err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusOK, members)
+	response.Success(ctx, http.StatusOK, members, "Members listed successfully")
 }

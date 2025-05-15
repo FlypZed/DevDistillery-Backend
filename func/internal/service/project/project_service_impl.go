@@ -40,7 +40,7 @@ func (s *ProjectServiceImpl) GetProject(id string) (domain.Project, error) {
 	return s.repo.GetByID(id)
 }
 
-func (s *ProjectServiceImpl) GetProjectsByUser(userID string) ([]domain.Project, error) {
+func (s *ProjectServiceImpl) GetProjectsByUser(userID int) ([]domain.Project, error) {
 	return s.repo.GetByUser(userID)
 }
 
