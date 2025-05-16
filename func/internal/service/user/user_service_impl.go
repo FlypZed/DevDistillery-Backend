@@ -15,8 +15,8 @@ func NewUserService(userRepository repository.UserRepository) UserService {
 }
 
 func (us *userService) CreateUser(user *domain.User) error {
-	if user.Name == "" || user.Email == "" || user.Password == "" {
-		return errors.New("name, email, and password are required")
+	if user.Name == "" || user.Email == "" {
+		return errors.New("name and email are required")
 	}
 
 	return us.userRepository.Create(user)
@@ -27,7 +27,16 @@ func (us *userService) GetUser(id string) (*domain.User, error) {
 }
 
 func (us *userService) GetAllUsers() ([]domain.User, error) {
-	return us.userRepository.FindAll()
+	users, err := us.userRepository.FindAll()
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range users {
+		users[i].Password = ""
+	}
+
+	return users, nil
 }
 
 func (us *userService) UpdateUser(user *domain.User) error {

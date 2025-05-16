@@ -29,6 +29,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
+	user.Password = ""
 	response.Success(c, http.StatusCreated, user, "User created successfully")
 }
 
@@ -40,6 +41,7 @@ func (uc *UserController) GetUser(c *gin.Context) {
 		return
 	}
 
+	user.Password = ""
 	response.Success(c, http.StatusOK, user, "User retrieved successfully")
 }
 
@@ -67,6 +69,7 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 		return
 	}
 
+	user.Password = ""
 	response.Success(c, http.StatusOK, user, "User updated successfully")
 }
 

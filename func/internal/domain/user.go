@@ -5,10 +5,14 @@ import (
 )
 
 type User struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Password  string    `json:"-"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID          string    `json:"id" gorm:"primaryKey"`
+	Email       string    `json:"email"`
+	Name        string    `json:"name"`
+	Picture     string    `json:"picture"`
+	GithubID    int64     `json:"githubId"`
+	GithubLogin string    `json:"githubLogin"`
+	PublicRepos int       `json:"publicRepos"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	Password    string    `json:"-" gorm:"-"`
 }

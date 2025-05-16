@@ -2,7 +2,9 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 	"func/internal/domain"
+	"log"
 
 	"gorm.io/gorm"
 )
@@ -25,6 +27,9 @@ func (ur *userRepository) Create(user *domain.User) error {
 func (ur *userRepository) FindByID(id string) (*domain.User, error) {
 	var user domain.User
 	if err := ur.db.First(&user, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &user, nil
@@ -32,9 +37,12 @@ func (ur *userRepository) FindByID(id string) (*domain.User, error) {
 
 func (ur *userRepository) FindAll() ([]domain.User, error) {
 	var users []domain.User
-	if err := ur.db.Find(&users).Error; err != nil {
-		return nil, err
+
+	if err := ur.db.Table("app_user").Find(&users).Error; err != nil {
+		log.Printf("Error en UserRepository.FindAll: %v", err)
+		return nil, fmt.Errorf("error al buscar usuarios: %w", err)
 	}
+
 	return users, nil
 }
 
