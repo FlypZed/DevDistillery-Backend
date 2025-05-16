@@ -42,7 +42,7 @@ func SetupRouter(
 			projectRoutes.DELETE("/:id", projectController.Delete)
 
 			// Member management endpoints
-			memberRoutes := projectRoutes.Group("/:id/members")
+			memberRoutes := projectRoutes.Group("/:id/members/")
 			{
 				memberRoutes.POST("/", projectController.AddMember)
 				memberRoutes.DELETE("/:userId", projectController.RemoveMember)

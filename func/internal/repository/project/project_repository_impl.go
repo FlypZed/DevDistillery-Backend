@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"func/internal/domain"
@@ -165,28 +166,36 @@ func (r *ProjectRepositoryImpl) RemoveMember(projectID, userID string) error {
 }
 
 func (r *ProjectRepositoryImpl) ListMembers(projectID string) ([]domain.Member, error) {
-	query := `SELECT user_id, project_id, role, joined_at 
-              FROM project_member
-              WHERE project_id = $1`
+	query := `
+        SELECT 
+            pm.user_id::text, 
+            pm.project_id::text, 
+            pm.role, 
+            pm.joined_at, 
+            u.name, 
+            u.picture
+        FROM project_member pm
+        JOIN app_user u ON pm.user_id = u.id
+        WHERE pm.project_id = $1::uuid`
 
 	rows, err := r.db.Query(query, projectID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error executing query: %v", err)
 	}
 	defer rows.Close()
 
 	var members []domain.Member
 	for rows.Next() {
 		var m domain.Member
-		err := rows.Scan(&m.UserID, &m.ProjectID, &m.Role, &m.JoinedAt)
+		err := rows.Scan(&m.UserID, &m.ProjectID, &m.Role, &m.JoinedAt, &m.Name, &m.Picture)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error scanning row: %v", err)
 		}
 		members = append(members, m)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in rows: %v", err)
 	}
 
 	return members, nil

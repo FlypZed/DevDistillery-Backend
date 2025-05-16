@@ -36,7 +36,7 @@ func New() *gin.Engine {
 
 	// Configuración inicial del router
 	router := gin.New()
-
+	router.Use(gin.Logger())
 	// Middleware de CORS
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"},

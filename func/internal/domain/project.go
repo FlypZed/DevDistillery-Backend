@@ -25,8 +25,10 @@ type Project struct {
 }
 
 type Member struct {
-	UserID    string    `json:"userId" gorm:"primaryKey"`
-	ProjectID string    `json:"projectId" gorm:"primaryKey"`
+	UserID    string    `json:"userId" gorm:"-"`
+	ProjectID string    `json:"projectId" gorm:"-"`
 	Role      string    `json:"role"`
 	JoinedAt  time.Time `json:"joinedAt"`
+	Name      string    `json:"name" gorm:"-"`
+	Picture   string    `json:"picture" gorm:"-"`
 }

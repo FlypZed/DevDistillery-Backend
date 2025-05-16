@@ -66,7 +66,6 @@ func (c *ProjectController) Get(ctx *gin.Context) {
 
 func (c *ProjectController) GetByUser(ctx *gin.Context) {
 	userIDStr := ctx.Param("userId")
-	log.Printf("Received userId param: %s", userIDStr)
 
 	userID, err := strconv.Atoi(userIDStr)
 	if err != nil {
@@ -74,7 +73,6 @@ func (c *ProjectController) GetByUser(ctx *gin.Context) {
 		response.Error(ctx, http.StatusBadRequest, "Invalid user ID format")
 		return
 	}
-	log.Printf("Parsed userId: %d", userID)
 
 	projects, err := c.service.GetProjectsByUser(userID)
 	if err != nil {
@@ -83,7 +81,6 @@ func (c *ProjectController) GetByUser(ctx *gin.Context) {
 		return
 	}
 
-	log.Printf("Found %d projects for user %d", len(projects), userID)
 	response.Success(ctx, http.StatusOK, projects, "User projects fetched successfully")
 }
 
