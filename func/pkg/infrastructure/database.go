@@ -3,13 +3,14 @@ package infrastructure
 import (
 	"fmt"
 	"func/internal/domain"
+	"log"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
 )
 
 func InitDB() *gorm.DB {
-	dsn := "host=localhost user=root password=root dbname=devdisitillery port=5432 sslmode=disable"
+	dsn := "host=localhost user=postgres password=postgres dbname=dev_distillery port=5432 sslmode=disable"
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
