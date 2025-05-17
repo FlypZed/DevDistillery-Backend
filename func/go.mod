@@ -12,6 +12,8 @@ require (
 	gorm.io/gorm v1.25.12
 )
 
+require github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/bytedance/sonic v1.13.2 // indirect

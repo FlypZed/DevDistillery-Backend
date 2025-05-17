@@ -6,10 +6,12 @@ import (
 	ws "func/internal/service/websocket"
 	"func/pkg/infrastructure"
 	"func/pkg/response"
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 )
 
 type TaskController struct {
@@ -147,26 +149,52 @@ func (tc *TaskController) UpdateTaskStatus(c *gin.Context) {
 func (tc *TaskController) HandleTaskWebSocket(c *gin.Context) {
 	projectID := c.Param("projectId")
 	if projectID == "" {
+		log.Printf("[WebSocket] Error: Project ID is required")
 		response.Error(c, http.StatusBadRequest, "Project ID is required")
 		return
 	}
 
-	token := c.GetHeader("Authorization")
-	if token == "" {
-		token = c.Query("token")
-		if token == "" {
-			response.Error(c, http.StatusUnauthorized, "Authorization token required")
-			return
-		}
-	} else {
-		token = strings.TrimPrefix(token, "Bearer ")
+	log.Printf("[WebSocket] Incoming connection for project: %s", projectID)
+	log.Printf("[WebSocket] Headers: %v", c.Request.Header)
+
+	if !websocket.IsWebSocketUpgrade(c.Request) {
+		log.Printf("[WebSocket] Error: Not a WebSocket upgrade request")
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "WebSocket upgrade required"})
+		return
 	}
+
+	// Get token from Sec-WebSocket-Protocol header
+	protocols := websocket.Subprotocols(c.Request)
+	log.Printf("[WebSocket] Subprotocols received: %v", protocols)
+
+	var token string
+	for _, p := range protocols {
+		if strings.HasPrefix(p, "Bearer ") {
+			token = strings.TrimPrefix(p, "Bearer ")
+			break
+		} else if len(p) > 100 {
+			token = p
+			break
+		}
+	}
+
+	if token == "" {
+		log.Printf("[WebSocket] Error: No token found in subprotocols")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization token required"})
+		return
+	}
+
+	log.Printf("[WebSocket] Token extracted: %s... (truncated for security)", token[:10])
 
 	userID, err := infrastructure.ValidateJWT(token)
 	if err != nil {
-		response.Error(c, http.StatusUnauthorized, "Invalid token: "+err.Error())
+		log.Printf("[WebSocket] Error validating JWT: %v", err)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token: " + err.Error()})
 		return
 	}
+
+	log.Printf("[WebSocket] Authenticated user ID: %s", userID)
+	log.Printf("[WebSocket] Proceeding with WebSocket upgrade")
 
 	tc.websocketService.HandleConnection(c.Writer, c.Request, projectID, userID)
 }
