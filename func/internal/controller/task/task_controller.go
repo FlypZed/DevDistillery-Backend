@@ -5,7 +5,7 @@ import (
 	service "func/internal/service/task"
 	ws "func/internal/service/websocket"
 	"func/pkg/infrastructure"
-	"func/pkg/response" // Nuevo paquete importado
+	"func/pkg/response"
 	"net/http"
 	"strings"
 
@@ -36,6 +36,11 @@ func (tc *TaskController) CreateTask(c *gin.Context) {
 		return
 	}
 
+	tc.websocketService.Broadcast(task.ProjectID, ws.Message{
+		Type: "TASK_CREATED",
+		Data: task,
+	})
+
 	response.Success(c, http.StatusCreated, task, "Task created successfully")
 }
 
@@ -64,15 +69,32 @@ func (tc *TaskController) UpdateTask(c *gin.Context) {
 		return
 	}
 
+	tc.websocketService.Broadcast(task.ProjectID, ws.Message{
+		Type: "TASK_UPDATED",
+		Data: task,
+	})
+
 	response.Success(c, http.StatusOK, task, "Task updated successfully")
 }
 
 func (tc *TaskController) DeleteTask(c *gin.Context) {
 	id := c.Param("id")
+
+	task, err := tc.taskService.GetTask(id)
+	if err != nil {
+		response.Error(c, http.StatusNotFound, "Task not found")
+		return
+	}
+
 	if err := tc.taskService.DeleteTask(id); err != nil {
 		response.Error(c, http.StatusInternalServerError, "Failed to delete task: "+err.Error())
 		return
 	}
+
+	tc.websocketService.Broadcast(task.ProjectID, ws.Message{
+		Type: "TASK_DELETED",
+		Data: map[string]string{"taskId": id},
+	})
 
 	response.Success(c, http.StatusOK, nil, "Task deleted successfully")
 }
@@ -115,14 +137,14 @@ func (tc *TaskController) UpdateTaskStatus(c *gin.Context) {
 	}
 
 	tc.websocketService.Broadcast(task.ProjectID, ws.Message{
-		Type: "TASK_UPDATED",
+		Type: "TASK_STATUS_UPDATED",
 		Data: task,
 	})
 
 	response.Success(c, http.StatusOK, task, "Task status updated successfully")
 }
 
-func (tc *TaskController) HandleKanbanWebSocket(c *gin.Context) {
+func (tc *TaskController) HandleTaskWebSocket(c *gin.Context) {
 	projectID := c.Param("projectId")
 	if projectID == "" {
 		response.Error(c, http.StatusBadRequest, "Project ID is required")

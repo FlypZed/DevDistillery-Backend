@@ -56,6 +56,7 @@ func SetupRouter(
 			taskRoutes.GET("/:id", taskController.GetTask)
 			taskRoutes.PUT("/:id", taskController.UpdateTask)
 			taskRoutes.DELETE("/:id", taskController.DeleteTask)
+			taskRoutes.GET("/ws/:projectId", taskController.HandleTaskWebSocket)
 		}
 
 		boardRoutes := api.Group("/boards")
